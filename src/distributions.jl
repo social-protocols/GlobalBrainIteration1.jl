@@ -1,12 +1,8 @@
 abstract type Tally end
 
 struct SimpleTally <: Tally
-  upvotes::Int
-  downvotes::Int
-end
-
-function totalcount(tally::SimpleTally)
-  return tally.upvotes + tally.downvotes
+  successes::Int
+  total::Int
 end
 
 abstract type Distribution end
@@ -18,8 +14,8 @@ end
 
 function update(dist::BetaDistribution, tally::SimpleTally)
   return BetaDistribution(
-    (dist.mean * dist.weight + totalcount(tally)) / (dist.weight + totalcount(tally)),
-    dist.weight + totalcount(tally)
+    (dist.mean * dist.weight + tally.successes) / (dist.weight + tally.total),
+    dist.weight + tally.total
   )
 end
 
@@ -27,11 +23,11 @@ function resetweight(dist::BetaDistribution, new_weight::Float64)
   return BetaDistribution(dist.mean, new_weight)
 end
 
-function beta_dist_from_params(alpha::Float64, beta::Float64)
+function betadist_from_params(alpha::Float64, beta::Float64)
   return BetaDistribution(alpha / (alpha + beta), alpha + beta)
 end
 
-function params_from_beta_dist(dist::BetaDistribution)
+function params_from_betadist(dist::BetaDistribution)
   alpha = dist.mean * dist.weight
   return (alpha, dist.weight - alpha)
 end
