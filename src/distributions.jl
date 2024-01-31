@@ -32,3 +32,5 @@ function params_from_betadist(dist::BetaDistribution)
   return (alpha, dist.weight - alpha)
 end
 
+const GLOBAL_PRIOR_UPVOTE_PROBABILITY = BetaDistribution(0.875, WEIGHT_CONSTANT)
+

@@ -1,5 +1,7 @@
-function calc_vote_rate(vote_history::Array{Vote})
-  interval = maximum(vote_history.timestamp) - minimum(vote_history.timestamp)
-  nvotes = length(vote_history)
-  return nvotes / interval
+function calc_voterate(tally::SimpleTally, attention::Float64)
+  return update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, SimpleTally(tally.total, attention)).mean
 end
+
+# attention is a number (here: Float64)
+# so require protocol implementor to provide attention operationalized as a number
+
