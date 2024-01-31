@@ -19,8 +19,11 @@ export down
 
 export calc_voterate
 
+export InformedTally
+
 include("distributions.jl")
 include("types.jl")
 include("voterate.jl")
+include("algorithm.jl")
 
 end
