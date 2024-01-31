@@ -10,8 +10,10 @@ end
 # We need the `InformedTally` for each post and reply in the thread.
 # Task: How to formalize
 
-function find_top_reply(post_tally::SimpleTally, informed_tallies::Vector{InformedTally})
-
+function find_top_reply(
+  post_tally::SimpleTally,
+  informed_tallies::Vector{InformedTally}
+)
   # if informed tallies empty
     # do something
   # else loop over informed tallies
