@@ -2,27 +2,31 @@ module GlobalBrain
 
 const WEIGHT_CONSTANT = 2.3
 
-export Tally
-export SimpleTally
+export UpDownTally
+export InformedTally
+
 export BayesianAverage
 export update
-export resetweight
-export bayesian_avg_from_alpha_beta
-export alpha_beta_from_bayesian_avg
+# export reset_weight
+# export bayesian_avg_from_alpha_beta
+# export alpha_beta_from_bayesian_avg
+
+export GLOBAL_PRIOR_VOTE_RATE
 export GLOBAL_PRIOR_UPVOTE_PROBABILITY
+
+export calc_voterate
 
 export Post
 export Vote
 export up
 export down
 
-export calc_voterate
+export find_top_reply
 
-export InformedTally
+using Chain
 
 include("distributions.jl")
 include("types.jl")
-include("voterate.jl")
 include("algorithm.jl")
 
 end

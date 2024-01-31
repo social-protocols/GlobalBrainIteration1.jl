@@ -6,10 +6,10 @@ end
 @enum VoteDirection up down
 
 struct Vote
-  postid::Int64
-  noteid::Union{Int64, Nothing}
-  userid::Int64
-  vote::VoteDirection
+  post_id::Int64
+  note_id::Union{Int64, Nothing}
+  user_id::Int64
+  direction::VoteDirection
   timestamp::Int64
 end
 
