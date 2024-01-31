@@ -7,65 +7,17 @@ struct InformedTally <: Tally
   note_tally::SimpleTally
 end
 
+# We need the `InformedTally` for each post and reply in the thread.
+# Task: How to formalize
 
-# export async function findTopNoteId(
-# 	tagId: number,
-# 	postId: number,
-# ): Promise<[number | null, number, number]> {
-# 	const talliesMap = new Map<number, InformedTally[]>()
-# 	await getCurrentTallies(tagId, postId, talliesMap)
-# 
-# 	const tally = await currentTally(tagId, postId)
-# 
-# 	const result = findTopNoteGivenTallies(postId, tally, talliesMap)
-# 	return result
-# }
+function find_top_reply(post_tally::SimpleTally, informed_tallies::Vector{InformedTally})
 
-
-# async function getCurrentTallies(
-# 	tagId: number,
-# 	postId: number,
-# 	map: Map<number, InformedTally[]>,
-# ) {
-# 	const results = await db
-# 		.selectFrom('DetailedTally')
-# 		.where('tagId', '=', tagId)
-# 		.where('postId', '=', postId)
-# 		.selectAll()
-# 		.execute()
-# 
-# 	const tallies = await Promise.all(
-# 		results.map(async result => {
-# 			await getCurrentTallies(tagId, result.noteId, map)
-# 			const tallyForNote = await currentTally(tagId, result.noteId)
-# 
-# 			return toInformedTally(result, tallyForNote)
-# 		}),
-# 	)
-# 
-# 	if (tallies.length > 0) {
-# 		map.set(postId, tallies)
-# 	}
-# 
-# 	return
-# }
-
-
-# async function currentTally(tagId: number, postId: number): Promise<Tally> {
-# 	const tally: CurrentTally[] = await db
-# 		.selectFrom('CurrentTally')
-# 		.where('tagId', '=', tagId)
-# 		.where('postId', '=', postId)
-# 		.selectAll()
-# 		.execute()
-#  
-# 	const t = tally[0]
-# 	if (t === undefined) {
-# 		return EMPTY_TALLY
-# 	}
-# 
-# 	return t
-# }
+  # if informed tallies empty
+    # do something
+  # else loop over informed tallies
+    # recursively find top reply for each reply
+      # calculate support
+end
 
 
 # export function findTopNoteGivenTallies(
@@ -131,3 +83,5 @@ end
 # 
 # 	return [topNoteId, pOfAGivenShownTopNote, pOfAGivenNotShownTopNote]
 # }
+
+
