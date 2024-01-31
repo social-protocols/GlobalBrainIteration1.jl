@@ -7,11 +7,10 @@
 # - also a number (here: Float64)
 # - number of votes over the total attention on the post
 
-
 function calc_voterate(tally::SimpleTally, attention::Float64)::Float64
   return update(
-    GLOBAL_PRIOR_UPVOTE_PROBABILITY,
-    SimpleTally(tally.total_count, attention)
-  ).mean
+    GLOBAL_PRIOR_VOTE_RATE,
+    SimpleTally(totalcount(tally), attention)
+  ).avg
 end
 

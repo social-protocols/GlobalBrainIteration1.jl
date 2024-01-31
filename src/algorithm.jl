@@ -1,4 +1,4 @@
-struct InformedTally <: Tally
+struct InformedTally
   postId::Int64
   noteId::Int64
 

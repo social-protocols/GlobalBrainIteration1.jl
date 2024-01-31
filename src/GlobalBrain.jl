@@ -4,12 +4,11 @@ const WEIGHT_CONSTANT = 2.3
 
 export Tally
 export SimpleTally
-export Distribution
-export BetaDistribution
+export BayesianAverage
 export update
 export resetweight
-export betadist_from_params
-export params_from_betadist
+export bayesian_avg_from_alpha_beta
+export alpha_beta_from_bayesian_avg
 export GLOBAL_PRIOR_UPVOTE_PROBABILITY
 
 export Post

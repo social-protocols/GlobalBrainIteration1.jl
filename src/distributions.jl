@@ -1,36 +1,41 @@
-abstract type Tally end
-
-struct SimpleTally <: Tally
-  success_count::Int
-  total_count::Int
+struct SimpleTally
+  upvotes::Int
+  downvotes::Int
 end
 
-abstract type Distribution end
+function totalcount(tally::SimpleTally)::Int
+  return tally.upvotes + tally.downvotes
+end
 
-struct BetaDistribution <: Distribution
-  mean::Float64
+struct BayesianAverage
+  avg::Float64
   weight::Float64
 end
 
-function update(dist::BetaDistribution, tally::SimpleTally)::BetaDistribution
-  return BetaDistribution(
-    (dist.mean * dist.weight + tally.success_count) / (dist.weight + tally.total_count),
-    dist.weight + tally.total_count
+function update(current_avg::BayesianAverage, tally::SimpleTally)::BayesianAverage
+  return BayesianAverage(
+    (current_avg.avg * current_avg.weight + tally.upvotes) / (current_avg.weight + totalcount(tally)),
+    current_avg.weight + totalcount(tally)
   )
 end
 
-function resetweight(dist::BetaDistribution, new_weight::Float64)::BetaDistribution
-  return BetaDistribution(dist.mean, new_weight)
+function resetweight(avg::BayesianAverage, new_weight::Float64)::BayesianAverage
+  return BayesianAverage(avg.avg, new_weight)
 end
 
-function betadist_from_params(alpha::Float64, beta::Float64)::BetaDistribution
-  return BetaDistribution(alpha / (alpha + beta), alpha + beta)
+function bayesian_avg_from_alpha_beta(alpha::Float64, beta::Float64)::BayesianAverage
+  return BayesianAverage(alpha / (alpha + beta), alpha + beta)
 end
 
-function params_from_betadist(dist::BetaDistribution)::Tuple{Float64, Float64}
-  alpha = dist.mean * dist.weight
-  return (alpha, dist.weight - alpha)
+function alpha_beta_from_bayesian_avg(avg::BayesianAverage)::Tuple{Float64, Float64}
+  alpha = avg.avg * avg.weight
+  beta = avg.weight - alpha
+  return (alpha, beta)
 end
 
-const GLOBAL_PRIOR_UPVOTE_PROBABILITY = BetaDistribution(0.875, WEIGHT_CONSTANT)
+const GLOBAL_PRIOR_UPVOTE_PROBABILITY = BayesianAverage(0.875, WEIGHT_CONSTANT)
 
+
+# Global prior on the vote rate (votes / attention). By definition the prior average is 1,
+# because attention is calculated as the expected votes for the average post.
+const GLOBAL_PRIOR_VOTE_RATE = BayesianAverage(1, WEIGHT_CONSTANT)
