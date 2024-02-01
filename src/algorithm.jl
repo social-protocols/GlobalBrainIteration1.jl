@@ -1,6 +1,6 @@
 struct InformedTally
-  postId::Int64
-  noteId::Int64
+  post_id::Int64
+  note_id::Union{Int64, Nothing}
 
   given_not_shown_this_note::UpDownTally
   given_shown_this_note::UpDownTally
@@ -13,7 +13,7 @@ end
 function find_top_reply(
   post_tally::UpDownTally,
   informed_tallies::Vector{InformedTally}
-)
+)::Tuple{Int, Float64, Float64}
   p_of_a_given_not_shown_top_note = update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, post_tally).avg
   p_of_a_given_shown_top_note = p_of_a_given_not_shown_top_note
 
