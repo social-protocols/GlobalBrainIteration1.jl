@@ -12,7 +12,7 @@ end
 
 function find_top_reply(
   post_tally::UpDownTally,
-  informed_tallies::Vector{InformedTally}
+  informed_tallies::Dict{Int, InformedTally}
 )::Tuple{Int, Float64, Float64}
   p_of_a_given_not_shown_top_note = update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, post_tally).avg
   p_of_a_given_shown_top_note = p_of_a_given_not_shown_top_note
@@ -24,7 +24,7 @@ function find_top_reply(
 
   for tally in informed_tallies
     (_, p_of_b_given_shown_top_subnote, p_of_b_given_not_shown_top_subnote) =
-      find_top_reply(tally.note_tally, tally.informed_tallies)
+      find_top_reply(tally.note_tally, informed_tallies)
     support = p_of_b_given_shown_top_subnote / p_of_b_given_not_shown_top_subnote
 
     p_of_a_given_not_shown_this_note =
