@@ -18,23 +18,29 @@ posts = [
   Post(7, 3),
 ]
 
-informed_tallies = [
-  InformedTally(1, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(1, 2, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(1, 3, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(2, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(2, 4, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(2, 5, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(3, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(3, 6, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(3, 7, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(4, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(5, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(6, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-  InformedTally(7, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-]
+informed_tallies = 
+  Dict(
+    it.post_id => it
+    for it in [
+      InformedTally(1, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(1, 2, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(1, 3, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(2, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(2, 4, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(2, 5, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(3, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(3, 6, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(3, 7, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(4, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(5, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(6, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+      InformedTally(7, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
+    ]
+  )
 
 post_tally = UpDownTally(0, 0)
+
+println(informed_tallies)
 
 top_note_id, p1, p2 = find_top_reply(post_tally, informed_tallies)
 
