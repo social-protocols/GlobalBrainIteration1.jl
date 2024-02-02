@@ -2,10 +2,10 @@ module GlobalBrain
 
 const WEIGHT_CONSTANT = 2.3
 
-export UpDownTally
+export Tally
 export InformedTally
 
-export BayesianAverage
+export BetaDistribution
 export update
 # export reset_weight
 # export bayesian_avg_from_alpha_beta

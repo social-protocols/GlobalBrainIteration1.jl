@@ -18,33 +18,56 @@ posts = [
   Post(7, 3),
 ]
 
-informed_tallies = 
-  Dict(
-    it.post_id => it
-    for it in [
-      InformedTally(1, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(1, 2, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(1, 3, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(2, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(2, 4, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(2, 5, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(3, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(3, 6, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(3, 7, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(4, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(5, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(6, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-      InformedTally(7, nothing, UpDownTally(0, 0), UpDownTally(0, 0), UpDownTally(0, 0)),
-    ]
-  )
+informed_tallies =
+  [
+    InformedTally(1, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(1, 2, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(1, 3, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(2, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(2, 4, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(2, 5, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(3, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(3, 6, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(3, 7, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(4, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(5, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(6, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+    InformedTally(7, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+  ]
 
-post_tally = UpDownTally(0, 0)
+informed_tallies_dict = Dict{Int, Array{InformedTally}}()
+for it in informed_tallies
+  key = it.post_id
+  value = [it for it in informed_tallies if it.post_id == key]
+  informed_tallies_dict[it.post_id] = value
+end
+print(informed_tallies_dict)
 
-println(informed_tallies)
+post_tally = Tally(0, 0)
 
-top_note_id, p1, p2 = find_top_reply(post_tally, informed_tallies)
+top_note_id, p1, p2 = find_top_reply(1, post_tally, informed_tallies_dict)
 
 println("top_note_id: ", top_note_id)
 println("p1: ", p1)
 println("p2: ", p2)
 
+
+
+# Dict(
+#   it.post_id => it
+#   for it in [
+#     InformedTally(1, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(1, 2, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(1, 3, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(2, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(2, 4, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(2, 5, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(3, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(3, 6, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(3, 7, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(4, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(5, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(6, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#     InformedTally(7, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
+#   ]
+# )
