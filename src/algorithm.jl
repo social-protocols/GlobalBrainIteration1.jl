@@ -1,6 +1,6 @@
 struct InformedTally
   post_id::Int64
-  note_id::Union{Int64, Nothing}
+  note_id::Int64
 
   for_note::Tally
   given_not_shown_this_note::Tally
@@ -13,37 +13,33 @@ end
 function find_top_reply(
   post_id::Int,
   post_tally::Tally,
-  informed_tallies::Dict{Int, Array{InformedTally}}
+  informed_tallies::Dict{Int, Vector{InformedTally}}
 )::Tuple{Union{Int, Nothing}, Float64, Float64}
   tallies = informed_tallies[post_id]
-    
-  p_of_a_given_not_shown_top_note =
-    update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, post_tally).mean
-  p_of_a_given_shown_top_note = p_of_a_given_not_shown_top_note
-  top_note_id = nothing
 
   # If there are no replies, the upvote rate only exists for the post without the
   # note. There is no note, thus note_id is `nothing`.
   if isempty(tallies)
-    return (
-      top_note_id, # nothing
-      p_of_a_given_not_shown_top_note,
-      p_of_a_given_not_shown_top_note
-    )
+    p = update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, post_tally).mean
+    return (nothing, p, p)
   end
 
-  for tally in tallies
-    if isnothing(tally.note_id)
-      continue
-    end
+  # We start with the default of there not being any note that changes the
+  # upvote probability at all.
+  p_of_a_given_not_shown_top_note = p_of_a_given_shown_top_note =
+    update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, post_tally).mean
+  top_note_id = nothing
 
-    # RECURSION STARTS HERE!! -->
+  for tally in tallies
     (_, p_of_b_given_shown_top_subnote, p_of_b_given_not_shown_top_subnote) =
       find_top_reply(tally.note_id, tally.for_note, informed_tallies)
     support = (
       p_of_b_given_shown_top_subnote
         / (p_of_b_given_shown_top_subnote + p_of_b_given_not_shown_top_subnote)
     )
+    # println("---------")
+    # println("given shown top subnote: ", p_of_b_given_shown_top_subnote)
+    # println("given not shown top subnote: ", p_of_b_given_not_shown_top_subnote)
 
     p_of_a_given_not_shown_this_note =
       update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, tally.given_not_shown_this_note).mean
@@ -58,6 +54,15 @@ function find_top_reply(
 
     p_of_a_given_shown_this_note_and_top_subnote =
       p_of_a_given_not_shown_this_note + delta * support
+
+    println("---------")
+    # println("p_of_a_given_not_shown_this_note: ", p_of_a_given_not_shown_this_note)
+    println("delta: ", delta)
+    println("support: ", support)
+    println("---------")
+    # println("p_of_a_given_shown_this_note_and_top_subnote: ", p_of_a_given_shown_this_note_and_top_subnote)
+    # println("=========")
+
 
     if (
       abs(p_of_a_given_shown_this_note_and_top_subnote - p_of_a_given_not_shown_this_note) >

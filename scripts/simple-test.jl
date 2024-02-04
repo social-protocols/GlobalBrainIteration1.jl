@@ -1,5 +1,26 @@
 using GlobalBrain
 
+post_tally, posts, informed_tallies = create_random_discussion(20, 15)
+
+println("Starting computation...")
+top_note_id, p1, p2 = find_top_reply(1, post_tally, informed_tallies)
+
+println("--------------")
+println("Informed tallies: ")
+for k in sort(collect(keys(informed_tallies)))
+  println(k, ": ", informed_tallies[k])
+end
+println("--------------")
+println("top_note_id: ", top_note_id)
+println("given shown note: ", p1)
+println("given not shown note: ", p2)
+
+
+# ------------------------------------------------------------------------------
+# --- OLD EXAMPLE --------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+# --- Discussion tree:
 # 1
 # |-2
 #   |-4
@@ -8,66 +29,22 @@ using GlobalBrain
 #   |-6
 #   |-7
 
-posts = [
-  Post(1, nothing),
-  Post(2, 1),
-  Post(3, 1),
-  Post(4, 2),
-  Post(5, 2),
-  Post(6, 3),
-  Post(7, 3),
-]
+# posts = [
+#   Post(1, nothing),
+#   Post(2, 1),
+#   Post(3, 1),
+#   Post(4, 2),
+#   Post(5, 2),
+#   Post(6, 3),
+#   Post(7, 3),
+# ]
 
-informed_tallies =
-  [
-    InformedTally(1, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(1, 2, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(1, 3, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(2, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(2, 4, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(2, 5, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(3, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(3, 6, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(3, 7, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(4, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(5, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(6, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-    InformedTally(7, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-  ]
+# informed_tallies = [
+#   InformedTally(1, 2, Tally(5, 10), Tally(8, 14), Tally(6, 9)),
+#   InformedTally(1, 3, Tally(8, 11), Tally(9, 16), Tally(1, 13)),
+#   InformedTally(2, 4, Tally(12, 12), Tally(8, 9), Tally(0, 10)),
+#   InformedTally(2, 5, Tally(5, 7), Tally(5, 6), Tally(7, 13)),
+#   InformedTally(3, 6, Tally(3, 4), Tally(5, 8), Tally(2, 3)),
+#   InformedTally(3, 7, Tally(8, 15), Tally(7, 10), Tally(3, 15)),
+# ]
 
-informed_tallies_dict = Dict{Int, Array{InformedTally}}()
-for it in informed_tallies
-  key = it.post_id
-  value = [it for it in informed_tallies if it.post_id == key]
-  informed_tallies_dict[it.post_id] = value
-end
-print(informed_tallies_dict)
-
-post_tally = Tally(0, 0)
-
-top_note_id, p1, p2 = find_top_reply(1, post_tally, informed_tallies_dict)
-
-println("top_note_id: ", top_note_id)
-println("p1: ", p1)
-println("p2: ", p2)
-
-
-
-# Dict(
-#   it.post_id => it
-#   for it in [
-#     InformedTally(1, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(1, 2, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(1, 3, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(2, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(2, 4, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(2, 5, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(3, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(3, 6, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(3, 7, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(4, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(5, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(6, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#     InformedTally(7, nothing, Tally(0, 0), Tally(0, 0), Tally(0, 0)),
-#   ]
-# )
