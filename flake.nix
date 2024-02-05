@@ -21,6 +21,7 @@
             buildInputs = [
               just
               git
+              less
               julia-bin
             ];
           };
