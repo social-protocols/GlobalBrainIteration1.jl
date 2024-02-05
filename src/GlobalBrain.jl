@@ -1,7 +1,5 @@
 module GlobalBrain
 
-const WEIGHT_CONSTANT = 2.3
-
 export Model
 export BetaBernoulli
 export GammaPoisson
@@ -16,11 +14,11 @@ export BernoulliTally
 export PoissonTally
 export update
 export reset_weight
+export mle
 export alpha
 export beta
 export +
 export -
-
 
 export GLOBAL_PRIOR_VOTE_RATE
 export GLOBAL_PRIOR_UPVOTE_PROBABILITY
@@ -28,9 +26,9 @@ export GLOBAL_PRIOR_UPVOTE_PROBABILITY
 # export calc_voterate
 
 export Post
-export Vote
-export up
-export down
+# export Vote
+# export up
+# export down
 
 export find_top_reply
 
@@ -46,6 +44,8 @@ using Chain
 using Graphs
 using Random
 using Distributions
+
+const WEIGHT_CONSTANT = 2.3
 
 include("distributions.jl")
 include("types.jl")

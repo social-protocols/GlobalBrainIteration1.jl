@@ -55,6 +55,10 @@ function reset_weight(dist::Distribution, new_weight::Float64)
   return T(dist.mean, new_weight)
 end
 
+function mle(dist::BetaDistribution)::Float64
+  return dist.mean
+end
+
 function sample(dist::BetaDistribution)::Float64
   formal_dist = Beta(alpha(dist), beta(dist))
   return rand(formal_dist)
