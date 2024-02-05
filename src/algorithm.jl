@@ -7,32 +7,33 @@ struct InformedTally
   given_shown_this_note::BernoulliTally
 end
 
-struct NoteEstimate
+struct NoteEffect
   post_id::Int64
   note_id::Union{Int64, Nothing}
   p_given_not_shown_note::Float64
   p_given_shown_note::Float64
 end
 
-function estimate_note_diff(estimate::NoteEstimate)::Float64
+function magnitude(estimate::NoteEffect)::Float64
   return abs(estimate.p_given_not_shown_note - estimate.p_given_shown_note)
 end
 
-function calc_note_estimate(tally::InformedTally)::NoteEstimate
+function calc_note_effect(tally::InformedTally)::NoteEffect
   p_given_not_shown_note =
     @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
       update(_, tally.given_not_shown_this_note)
       mle(_)
     end
 
-  p_given_shown_note = @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
-    update(_, tally.given_not_shown_this_note)
-    reset_weight(_, WEIGHT_CONSTANT)
-    update(_, tally.given_shown_this_note)
-    mle(_)
-  end
+  p_given_shown_note =
+    @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
+      update(_, tally.given_not_shown_this_note)
+      reset_weight(_, WEIGHT_CONSTANT)
+      update(_, tally.given_shown_this_note)
+      mle(_)
+    end
 
-  return NoteEstimate(
+  return NoteEffect(
     tally.post_id,
     tally.note_id,
     p_given_not_shown_note,
@@ -40,63 +41,52 @@ function calc_note_estimate(tally::InformedTally)::NoteEstimate
   )
 end
 
-function calc_thread_level_prior_note_estimate(
-  post_id::Int,
-  post_tally::Tally
-)::NoteEstimate
-  p_of_a_given_not_shown_top_note = p_of_a_given_shown_top_note =
-    @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
-      update(_, post_tally)
-      mle(_)
-    end
-  top_note_id = nothing
-  return NoteEstimate(
-    post_id,
-    top_note_id,
-    p_of_a_given_not_shown_top_note,
-    p_of_a_given_shown_top_note
-  )
-end
-
 function find_top_reply(
   post_id::Int,
   post_tally::BernoulliTally,
   informed_tallies::Dict{Int, Vector{InformedTally}}
-)::NoteEstimate
+)::NoteEffect
   tallies = informed_tallies[post_id]
-  current_estimate = calc_thread_level_prior_note_estimate(post_id, post_tally)
+  p_prior = @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
+    update(_, post_tally)
+    mle(_)
+  end
+  current_estimated_effect = NoteEffect(post_id, nothing, p_prior, p_prior)
 
   if isempty(tallies)
-    return current_estimate
+    return current_estimated_effect
   end
 
   for tally in tallies
-    b_top_note = find_top_reply(tally.note_id, tally.for_note, informed_tallies)
+    b_top_note_effect = find_top_reply(tally.note_id, tally.for_note, informed_tallies)
     support = (
-      b_top_note.p_given_shown_note
-        / (b_top_note.p_given_shown_note + b_top_note.p_given_not_shown_note)
+      b_top_note_effect.p_given_shown_note
+        / (
+          b_top_note_effect.p_given_shown_note
+            + b_top_note_effect.p_given_not_shown_note
+        )
     )
 
-    a_this_note = calc_note_estimate(tally)
-    p_of_a_given_shown_this_note_and_top_subnote =
-      a_this_note.p_given_shown_note * support
-        + a_this_note.p_given_not_shown_note * (1 - support)
+    a_this_note_effect = calc_note_effect(tally)
 
-    if estimate_note_diff(a_this_note) > estimate_note_diff(current_estimate)
-      current_estimate = NoteEstimate(
+    if magnitude(a_this_note_effect) > magnitude(current_estimated_effect)
+      p_of_a_given_shown_this_note_and_top_subnote =
+        a_this_note_effect.p_given_shown_note * support
+          + a_this_note_effect.p_given_not_shown_note * (1 - support)
+      current_estimated_effect = NoteEffect(
         post_id,
         tally.note_id,
-        a_this_note.p_given_not_shown_note,
+        a_this_note_effect.p_given_not_shown_note,
         p_of_a_given_shown_this_note_and_top_subnote,
       )
     end
   end
 
-  return NoteEstimate(
+  return NoteEffect(
     post_id,
-    current_estimate.note_id,
-    current_estimate.p_given_not_shown_note,
-    current_estimate.p_given_shown_note,
+    current_estimated_effect.note_id,
+    current_estimated_effect.p_given_not_shown_note,
+    current_estimated_effect.p_given_shown_note,
   )
 end
 
