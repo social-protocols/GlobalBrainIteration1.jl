@@ -2,17 +2,14 @@ struct InformedTally
   post_id::Int64
   note_id::Int64
 
-  for_note::Tally
-  given_not_shown_this_note::Tally
-  given_shown_this_note::Tally
+  for_note::BernoulliTally
+  given_not_shown_this_note::BernoulliTally
+  given_shown_this_note::BernoulliTally
 end
-
-# We need the `InformedTally` for each post and reply in the thread.
-# Task: How to formalize
 
 function find_top_reply(
   post_id::Int,
-  post_tally::Tally,
+  post_tally::BernoulliTally,
   informed_tallies::Dict{Int, Vector{InformedTally}}
 )::Tuple{Union{Int, Nothing}, Float64, Float64}
   tallies = informed_tallies[post_id]
@@ -37,9 +34,6 @@ function find_top_reply(
       p_of_b_given_shown_top_subnote
         / (p_of_b_given_shown_top_subnote + p_of_b_given_not_shown_top_subnote)
     )
-    # println("---------")
-    # println("given shown top subnote: ", p_of_b_given_shown_top_subnote)
-    # println("given not shown top subnote: ", p_of_b_given_not_shown_top_subnote)
 
     p_of_a_given_not_shown_this_note =
       update(GLOBAL_PRIOR_UPVOTE_PROBABILITY, tally.given_not_shown_this_note).mean
@@ -50,24 +44,18 @@ function find_top_reply(
       update(_, tally.given_shown_this_note).mean
     end
 
-    delta = p_of_a_given_shown_this_note - p_of_a_given_not_shown_this_note
-
     p_of_a_given_shown_this_note_and_top_subnote =
-      p_of_a_given_not_shown_this_note + delta * support
+      p_of_a_given_shown_this_note * support
+        + p_of_a_given_not_shown_this_note * (1 - support)
 
-    println("---------")
-    # println("p_of_a_given_not_shown_this_note: ", p_of_a_given_not_shown_this_note)
-    println("delta: ", delta)
-    println("support: ", support)
-    println("---------")
-    # println("p_of_a_given_shown_this_note_and_top_subnote: ", p_of_a_given_shown_this_note_and_top_subnote)
-    # println("=========")
-
-
-    if (
-      abs(p_of_a_given_shown_this_note_and_top_subnote - p_of_a_given_not_shown_this_note) >
+    current_diff =
       abs(p_of_a_given_shown_top_note - p_of_a_given_not_shown_top_note)
+    candidate_diff = abs(
+      p_of_a_given_shown_this_note_and_top_subnote
+        - p_of_a_given_not_shown_this_note
     )
+
+    if candidate_diff > current_diff
       p_of_a_given_shown_top_note = p_of_a_given_shown_this_note_and_top_subnote
       p_of_a_given_not_shown_top_note = p_of_a_given_not_shown_this_note
       top_note_id = tally.note_id
@@ -76,4 +64,12 @@ function find_top_reply(
 
   return (top_note_id, p_of_a_given_shown_top_note, p_of_a_given_not_shown_top_note)
 end
+
+
+# ------------------------------------------------------------------------------
+# --- Notes: -------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+# We need the `InformedTally` for each post and reply in the thread.
+# Task: How to formalize
 

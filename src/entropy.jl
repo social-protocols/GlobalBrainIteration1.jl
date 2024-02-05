@@ -1,15 +1,22 @@
-# Maybe use StatsBase implementations:
-# -- https://juliastats.org/StatsBase.jl/stable/scalarstats/#Entropy-and-Related-Functions
+surprisal(p::Float64, unit::Int = 2)::Float64 = -log(p, unit)
 
 # Calculate entropy of a probability p: or to be technically correct the
 # entropy Bernoulli distribution with parameter p
-function entropy(p::Float64)::Float64
-  if p == 1
-    return 0
-  end
+entropy(p::Float64)::Float64 = (
+  p == 1
+    ? 0
+    : p * surprisal(p, 2) + (1 - p) * surprisal(1 - p, 2)
+)
 
-  -(p * log2(p)) -(1-p)*log2(1-p)
-end
+# # Calculate entropy of a probability p: or to be technically correct the
+# # entropy Bernoulli distribution with parameter p
+# function entropy(p::Float64)::Float64
+#   if p == 1 || p == 0
+#     return 0
+#   end
+
+#   return -(p * log2(p)) - (1 - p) * log2(1 - p)
+# end
 
 # Calculate cross-entropy of probabilities p and q or to be technically
 # correct: the cross-entropy of Bernoulli distributions with those parameters
@@ -34,6 +41,7 @@ end
 function information_gain(p::Float64, q0::Float64, q1::Float64)::Float64
 	return p * log2(q1/q0) + (1-p) * log2((1-q1)/(1-q0))
 end
+
 
 
 
