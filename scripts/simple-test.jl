@@ -3,7 +3,7 @@ using GlobalBrain
 post_tally, posts, informed_tallies = create_random_discussion(20, 15)
 
 println("Starting computation...")
-top_note_id, p1, p2 = find_top_reply(1, post_tally, informed_tallies)
+estimate = find_top_reply(1, post_tally, informed_tallies)
 
 println("--------------")
 println("Informed tallies: ")
@@ -11,9 +11,9 @@ for k in sort(collect(keys(informed_tallies)))
   println(k, ": ", informed_tallies[k])
 end
 println("--------------")
-println("top_note_id: ", top_note_id)
-println("given shown note: ", p1)
-println("given not shown note: ", p2)
+println("top_note_id: ", estimate.note_id)
+println("given shown note: ", estimate.p_given_shown_note)
+println("given not shown note: ", estimate.p_given_not_shown_note)
 
 
 # ------------------------------------------------------------------------------
