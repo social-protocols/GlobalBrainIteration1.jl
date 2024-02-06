@@ -1,5 +1,5 @@
 sync:
   git add src/
   git commit -m "WIP"
-  julia update.jl
+  julia --eval "using Pkg; Pkg.add(url=pwd())"
 
