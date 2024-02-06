@@ -31,8 +31,10 @@ export Post
 # export down
 
 export find_top_reply
+export score_thread
+export NoteEffect
 
-export create_random_discussion
+# export create_random_discussion
 
 export surprisal
 export entropy
@@ -50,7 +52,7 @@ const WEIGHT_CONSTANT = 2.3
 include("distributions.jl")
 include("types.jl")
 include("algorithm.jl")
-include("simulation.jl")
+# include("simulation.jl")
 include("entropy.jl")
 
 end

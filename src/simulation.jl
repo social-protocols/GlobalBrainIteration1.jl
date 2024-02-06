@@ -17,11 +17,11 @@ function create_random_discussion(
   sample_size = rand(1:max_votes_per_unit)
   informed_tallies = [
     InformedTally(
-      p.parent,
-      p.id,
-      random_bernoulli_tally(sample_size),
-      random_bernoulli_tally(sample_size),
-      random_bernoulli_tally(sample_size)
+      post_id = p.parent,
+      note_id = p.id,
+      for_note = random_bernoulli_tally(sample_size),
+      for_post_given_not_shown_note = random_bernoulli_tally(sample_size),
+      for_post_given_shown_note = random_bernoulli_tally(sample_size)
     )
     for p in posts
     if !isnothing(p.parent)
