@@ -41,6 +41,8 @@ function calc_note_effect(tally::InformedTally)::NoteEffect
   )
 end
 
+ratio_as_fraction(a::Number, b::Number)::Float64 = a / (a + b)
+
 function find_top_reply(
   post_id::Int,
   post_tally::BernoulliTally,
@@ -59,12 +61,9 @@ function find_top_reply(
 
   for tally in tallies
     b_top_note_effect = find_top_reply(tally.note_id, tally.for_note, informed_tallies)
-    support = (
-      b_top_note_effect.p_given_shown_note
-        / (
-          b_top_note_effect.p_given_shown_note
-            + b_top_note_effect.p_given_not_shown_note
-        )
+    support = ratio_as_fraction(
+      b_top_note_effect.p_given_shown_note,
+      b_top_note_effect.p_given_not_shown_note
     )
 
     a_this_note_effect = calc_note_effect(tally)

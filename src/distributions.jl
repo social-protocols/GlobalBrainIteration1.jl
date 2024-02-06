@@ -60,13 +60,13 @@ function mle(dist::BetaDistribution)::Float64
 end
 
 function sample(dist::BetaDistribution)::Float64
-  formal_dist = Distributions::Beta(alpha(dist), beta(dist))
-  return Random::rand(formal_dist)
+  formal_dist = Distributions.Beta(alpha(dist), beta(dist))
+  return Random.rand(formal_dist)
 end
 
 function sample(dist::GammaDistribution)::Float64
-  formal_dist = Distributions::Gamma(alpha(dist), 1 / beta(dist))
-  return Random::rand(formal_dist)
+  formal_dist = Distributions.Gamma(alpha(dist), 1 / beta(dist))
+  return Random.rand(formal_dist)
 end
 
 function Base.:+(a::Tally, b::Tally)
