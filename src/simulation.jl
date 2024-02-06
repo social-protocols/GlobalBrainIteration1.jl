@@ -1,5 +1,5 @@
 function random_bernoulli_tally(sample_size::Int)::BernoulliTally
-  count = rand(0:sample_size)
+  count = Random::rand(0:sample_size)
   return BernoulliTally(count, sample_size)
 end
 
@@ -33,8 +33,8 @@ function create_random_discussion(
     end
   end
 
-  upvotes = rand(1:(max_votes_per_unit * n_posts))
-  total_votes = rand(upvotes:(max_votes_per_unit * n_posts))
+  upvotes = Random::rand(1:(max_votes_per_unit * n_posts))
+  total_votes = Random::rand(upvotes:(max_votes_per_unit * n_posts))
   post_tally = BernoulliTally(upvotes, total_votes)
 
   return (post_tally, posts, informed_tallies_dict)
