@@ -1,2 +1,2 @@
 using Pkg
-Pkg.add(".")
+Pkg.add(url = pwd())
