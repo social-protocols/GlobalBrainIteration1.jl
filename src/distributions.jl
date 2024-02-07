@@ -55,10 +55,6 @@ function reset_weight(dist::Distribution, new_weight::Float64)
   return T(dist.mean, new_weight)
 end
 
-function mle(dist::BetaDistribution)::Float64
-  return dist.mean
-end
-
 function sample(dist::BetaDistribution)::Float64
   formal_dist = Distributions.Beta(alpha(dist), beta(dist))
   return Random.rand(formal_dist)
@@ -71,19 +67,24 @@ end
 
 function Base.:+(a::Tally, b::Tally)
   T = typeof(a)
-  @assert(T == typeof(b), "It only makes sense to add tallies of the same type")
+  @assert(T == typeof(b), "Tallies must be of the same type")
   return T(a.count + b.count, a.sample_size + b.sample_size)
 end
 
-# function Base.:-(a::Tally, b::Tally)
-#   T = typeof(a)
-#   @assert(T == typeof(b), "It only makes sense to subtract tallies of the same type")
-#   return T(a.count - b.count, a.sample_size - b.sample_size)
-# end
+function Base.:-(a::Tally, b::Tally)
+  T = typeof(a)
+  @assert(T == typeof(b), "Tallies must be of the same type")
+  return T(a.count - b.count, a.sample_size - b.sample_size)
+end
 
 function Base.:+(a::Tally, b::Tuple{Int, Int})
   T = typeof(a)
   return T(a.count + b[1], a.sample_size + b[2])
+end
+
+function Base.:-(a::Tally, b::Tuple{Int, Int})
+  T = typeof(a)
+  return T(a.count - b[1], a.sample_size - b[2])
 end
 
 # Global prior on the vote rate (votes / attention). By definition the prior average is 1,
@@ -92,19 +93,7 @@ const GLOBAL_PRIOR_VOTE_RATE = BetaDistribution(1.0, WEIGHT_CONSTANT)
 
 const GLOBAL_PRIOR_UPVOTE_PROBABILITY = BetaDistribution(0.875, WEIGHT_CONSTANT)
 
-
-# ------------------------------------------------------------------------------
-# --- Notes: -------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-
-# ATTENTION:
-# - attention is a number (here: Float64)
-# - require protocol implementor to provide attention operationalized as a number
-# - each implementor has to operationalize attention themselves, but we can provide a default
-#
-# VOTERATE:
-# - also a number (here: Float64)
-# - number of votes over the total attention on the post
+# TODO:
 # function calc_voterate(vote_attention_tally::Tally)::Float64
 #   return update(GLOBAL_PRIOR_VOTE_RATE, vote_attention_tally).avg
 # end

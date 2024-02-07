@@ -1,12 +1,78 @@
+"""
+  InformedTally
+
+All tallies for a post/note combination.
+
+# Fields
+
+  * `post_id::Int64`: The unique identifier of the post.
+  * `note_id::Int64`: The unique identifier of the note.
+  * `for_note::BernoulliTally`: The tally for the note.
+  * `for_post_given_not_shown_note::BernoulliTally`: The tally for the post
+    given the note was not shown.
+  * `for_post_given_shown_note::BernoulliTally`: The tally for the post given
+    the note was shown.
+
+# Constructors
+
+```julia
+InformedTally(
+  post_id::Int64,
+  note_id::Int64,
+  for_note::BernoulliTally,
+  for_post_given_not_shown_note::BernoulliTally,
+  for_post_given_shown_note::BernoulliTally
+)
+```
+
+A keyword constructor is also available:
+
+```julia
+InformedTally(;
+  post_id::Int64,
+  note_id::Int64,
+  for_note::BernoulliTally,
+  for_post_given_not_shown_note::BernoulliTally,
+  for_post_given_shown_note::BernoulliTally
+)
+```
+
+# Example
+
+```julia
+InformedTally(
+  post_id = 1,
+  note_id = 2,
+  for_note = BernoulliTally(5, 6),
+  for_post_given_not_shown_note = BernoulliTally(1, 4),
+  for_post_given_shown_note = BernoulliTally(3, 5)
+)
+```
+"""
 Base.@kwdef struct InformedTally
   post_id::Int64
   note_id::Int64
-
   for_note::BernoulliTally
   for_post_given_not_shown_note::BernoulliTally
   for_post_given_shown_note::BernoulliTally
 end
 
+"""
+  NoteEffect
+
+The effect of a note on a post, given by the upvote probabilities given the
+note was shown and not shown respectively.
+
+# Fields
+
+  * `post_id::Int64`: The unique identifier of the post.
+  * `note_id::Union{Int64, Nothing}`: The unique identifier of the note. If
+    `nothing`, then this is the root post.
+  * `p_given_not_shown_note::Float64`: The probability of an upvote given the
+    note was not shown.
+  * `p_given_shown_note::Float64`: The probability of an upvote given the note
+    was shown.
+"""
 Base.@kwdef struct NoteEffect
   post_id::Int64
   note_id::Union{Int64, Nothing}
@@ -14,6 +80,17 @@ Base.@kwdef struct NoteEffect
   p_given_shown_note::Float64
 end
 
+"""
+  magnitude(effect::Union{NoteEffect, Nothing})::Float64
+
+Calculate the magnitude of a `NoteEffect`: the absolute difference between the
+upvote probabilities given the note was shown and not shown respectively.
+
+# Parameters
+
+  * `effect::Union{NoteEffect, Nothing}`: The effect to calculate the magnitude
+    of.
+"""
 function magnitude(effect::Union{NoteEffect, Nothing})::Float64
   if isnothing(effect)
     return 0.0
@@ -21,20 +98,26 @@ function magnitude(effect::Union{NoteEffect, Nothing})::Float64
   return abs(effect.p_given_not_shown_note - effect.p_given_shown_note)
 end
 
-function calc_note_effect(tally::InformedTally)::NoteEffect
-  p_given_not_shown_note =
-    @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
-      update(_, tally.for_post_given_not_shown_note)
-      mle(_)
-    end
+"""
+  calc_note_effect(tally::InformedTally)::NoteEffect
 
-  p_given_shown_note =
-    @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
-      update(_, tally.for_post_given_not_shown_note)
-      reset_weight(_, WEIGHT_CONSTANT)
-      update(_, tally.for_post_given_shown_note)
-      mle(_)
-    end
+Calculate the effect of a note on a post from the informed tally for the note
+and the post.
+
+# Parameters
+
+  * `tally::InformedTally`: The informed tallies for the note and the post.
+"""
+function calc_note_effect(tally::InformedTally)::NoteEffect
+  p_given_not_shown_note = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+    (x -> update(x, tally.for_post_given_shown_note)) |>
+    (x -> x.mean)
+
+  p_given_shown_note = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+    (x -> update(x, tally.for_post_given_not_shown_note)) |>
+    (x -> reset_weight(x, WEIGHT_CONSTANT)) |>
+    (x -> update(x, tally.for_post_given_shown_note)) |>
+    (x -> x.mean)
 
   return NoteEffect(
     post_id = tally.post_id,
@@ -44,57 +127,45 @@ function calc_note_effect(tally::InformedTally)::NoteEffect
   )
 end
 
-function ratio_as_fraction(a::Number, b::Number)::Float64
-  @assert(a > 0 && b > 0, "a and b must be positive")
-  return a / (a + b)
+"""
+  calc_note_support(
+    p_given_shown_note::Float64,
+    p_given_not_shown_note::Float64
+  )::Float64
+
+Calculate the support for a note given the upvote probabilities given the note
+was shown and not shown respectively.
+
+# Parameters
+
+  * `p_given_shown_note::Float64`: The probability of an upvote given the note
+    was shown.
+  * `p_given_not_shown_note::Float64`: The probability of an upvote given the
+    note was not shown.
+"""
+function calc_note_support(
+  p_given_shown_note::Float64,
+  p_given_not_shown_note::Float64
+)::Float64
+  # TODO: this assert doesn't make sense conceptually -> handle p = 0 cases
+  @assert(p_given_shown_note > 0 && p_given_not_shown_note > 0, "upvote probabilities must be positive")
+  return p_given_shown_note / (p_given_shown_note + p_given_not_shown_note)
 end
 
-function find_top_reply(
-  post_id::Int,
-  post_tally::BernoulliTally,
-  informed_tallies::Dict{Int, Vector{InformedTally}}
-)::NoteEffect
-  tallies = informed_tallies[post_id]
-  p_prior = @chain GLOBAL_PRIOR_UPVOTE_PROBABILITY begin
-    update(_, post_tally)
-    mle(_)
-  end
-  current_estimated_effect = NoteEffect(post_id, nothing, p_prior, p_prior)
+"""
+  score_thread(
+    root_post_id::Int,
+    informed_tallies::Dict{Int, Vector{InformedTally}}
+  )::Vector{NoteEffect}
 
-  if isempty(tallies)
-    return current_estimated_effect
-  end
+Calculate (supported) scores for all post/note combinations in a thread.
 
-  for tally in tallies
-    b_top_note_effect = find_top_reply(tally.note_id, tally.for_note, informed_tallies)
-    support = ratio_as_fraction(
-      b_top_note_effect.p_given_shown_note,
-      b_top_note_effect.p_given_not_shown_note
-    )
+# Parameters
 
-    a_this_note_effect = calc_note_effect(tally)
-
-    if magnitude(a_this_note_effect) > magnitude(current_estimated_effect)
-      p_of_a_given_shown_this_note_and_top_subnote =
-        a_this_note_effect.p_given_shown_note * support
-          + a_this_note_effect.p_given_not_shown_note * (1 - support)
-      current_estimated_effect = NoteEffect(
-        post_id,
-        tally.note_id,
-        a_this_note_effect.p_given_not_shown_note,
-        p_of_a_given_shown_this_note_and_top_subnote,
-      )
-    end
-  end
-
-  return NoteEffect(
-    post_id = post_id,
-    note_id = current_estimated_effect.note_id,
-    p_given_not_shown_note = current_estimated_effect.p_given_not_shown_note,
-    p_given_shown_note = current_estimated_effect.p_given_shown_note,
-  )
-end
-
+  * `root_post_id::Int`: The unique identifier of the root post.
+  * `informed_tallies::Dict{Int, Vector{InformedTally}}`: The informed tallies
+    for the thread.
+"""
 function score_thread(
   root_post_id::Int,
   informed_tallies::Dict{Int, Vector{InformedTally}}
@@ -125,7 +196,7 @@ function score_thread(
           subnote_effects
         )
       else
-        support = ratio_as_fraction(
+        support = calc_note_support(
           top_subnote_effect.p_given_shown_note,
           top_subnote_effect.p_given_not_shown_note
         )
@@ -150,11 +221,33 @@ function score_thread(
   )
 end
 
+"""
+  find_top_reply(
+    post_id::Int,
+    informed_tallies::Dict{Int, Vector{InformedTally}}
+  )::Union{NoteEffect, Nothing}
 
-# ------------------------------------------------------------------------------
-# --- Notes: -------------------------------------------------------------------
-# ------------------------------------------------------------------------------
+Find the top reply to a post in a thread.
 
-# We need the `InformedTally` for each post and reply in the thread.
-# Task: How to formalize
+# Parameters
+
+  * `post_id::Int`: The unique identifier of the post.
+  * `informed_tallies::Dict{Int, Vector{InformedTally}}`: The informed tallies
+    for the thread.
+"""
+function find_top_reply(
+  post_id::Int,
+  informed_tallies::Dict{Int, Vector{InformedTally}}
+)::Union{NoteEffect, Nothing}
+  effects = score_thread(post_id, informed_tallies)
+  if isempty(effects)
+    return nothing
+  end
+  direct_children_effects = [n for n in effects if n.post_id == post_id]
+  return reduce(
+    (a, b) -> magnitude(a) > magnitude(b) ? a : b,
+    direct_children_effects;
+    init = nothing
+  )
+end
 

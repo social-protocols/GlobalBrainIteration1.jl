@@ -1,5 +1,15 @@
 module GlobalBrain
 
+import Random
+import Distributions
+
+const WEIGHT_CONSTANT = 2.3
+
+include("distributions.jl")
+include("types.jl")
+include("algorithm.jl")
+include("entropy.jl")
+
 export Model
 export BetaBernoulli
 export GammaPoisson
@@ -14,7 +24,6 @@ export BernoulliTally
 export PoissonTally
 export update
 export reset_weight
-export mle
 export alpha
 export beta
 export +
@@ -26,33 +35,18 @@ export GLOBAL_PRIOR_UPVOTE_PROBABILITY
 # export calc_voterate
 
 export Post
-# export Vote
-# export up
-# export down
+export Vote
 
-export find_top_reply
-export score_thread
 export NoteEffect
+export score_thread
+export find_top_reply
 
-# export create_random_discussion
-
+# binary entropy
+using .BinaryEntropy
 export surprisal
 export entropy
 export cross_entropy
 export relative_entropy
 export information_gain
-
-using Chain
-using Graphs
-using Random
-using Distributions
-
-const WEIGHT_CONSTANT = 2.3
-
-include("distributions.jl")
-include("types.jl")
-include("algorithm.jl")
-# include("simulation.jl")
-include("entropy.jl")
 
 end

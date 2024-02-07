@@ -1,3 +1,11 @@
+module BinaryEntropy
+
+export surprisal
+export entropy
+export cross_entropy
+export relative_entropy
+export information_gain
+
 function surprisal(p::Float64, unit::Int = 2)::Float64
   @assert(1 >= p > 0, "p must be in (0, 1]")
   return log(unit, 1 / p)
@@ -31,5 +39,7 @@ end
 # Information gained from moving from belief q0 to q1 if "true" probability is p
 function information_gain(p::Float64, q0::Float64, q1::Float64)::Float64
 	return p * log2(q1/q0) + (1-p) * log2((1-q1)/(1-q0))
+end
+
 end
 

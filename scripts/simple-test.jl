@@ -9,13 +9,13 @@ using GlobalBrain
 #   |-6
 #     |-7
 posts = [
-  Post(1, nothing),
-  Post(2, 1),
-  Post(3, 1),
-  Post(4, 2),
-  Post(5, 2),
-  Post(6, 3),
-  Post(7, 6),
+  Post(1, nothing, 0),
+  Post(2, 1, 0),
+  Post(3, 1, 0),
+  Post(4, 2, 0),
+  Post(5, 2, 0),
+  Post(6, 3, 0),
+  Post(7, 6, 0),
 ]
 
 # post_tally = BernoulliTally(26, 51)
