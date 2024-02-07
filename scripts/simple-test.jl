@@ -55,3 +55,11 @@ for e in estimate
   println(e)
 end
 
+println("==============")
+
+top_reply = find_top_reply(1, informed_tallies)
+
+println("--------------")
+println("Top reply: ")
+println(top_reply)
+
