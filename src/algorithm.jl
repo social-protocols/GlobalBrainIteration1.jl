@@ -12,42 +12,6 @@ All tallies for a post/note combination.
     given the note was not shown.
   * `for_post_given_shown_note::BernoulliTally`: The tally for the post given
     the note was shown.
-
-# Constructors
-
-```julia
-InformedTally(
-  post_id::Int64,
-  note_id::Int64,
-  for_note::BernoulliTally,
-  for_post_given_not_shown_note::BernoulliTally,
-  for_post_given_shown_note::BernoulliTally
-)
-```
-
-A keyword constructor is also available:
-
-```julia
-InformedTally(;
-  post_id::Int64,
-  note_id::Int64,
-  for_note::BernoulliTally,
-  for_post_given_not_shown_note::BernoulliTally,
-  for_post_given_shown_note::BernoulliTally
-)
-```
-
-# Example
-
-```julia
-InformedTally(
-  post_id = 1,
-  note_id = 2,
-  for_note = BernoulliTally(5, 6),
-  for_post_given_not_shown_note = BernoulliTally(1, 4),
-  for_post_given_shown_note = BernoulliTally(3, 5)
-)
-```
 """
 Base.@kwdef struct InformedTally
   post_id::Int64
@@ -84,7 +48,8 @@ end
   magnitude(effect::Union{NoteEffect, Nothing})::Float64
 
 Calculate the magnitude of a `NoteEffect`: the absolute difference between the
-upvote probabilities given the note was shown and not shown respectively.
+upvote probabilities given the note was shown and not shown respectively. The
+effect of `Nothing` is 0.0 by definition.
 
 # Parameters
 
@@ -92,6 +57,8 @@ upvote probabilities given the note was shown and not shown respectively.
     of.
 """
 function magnitude(effect::Union{NoteEffect, Nothing})::Float64
+  # TODO: the effect of "nothing" doesn't really make sense, this is a hack for
+  #       the score_thread function to work.
   if isnothing(effect)
     return 0.0
   end
@@ -179,16 +146,14 @@ function score_thread(
       subnote_effects = score_thread(tally.note_id, informed_tallies)
       this_note_effect = calc_note_effect(tally)
       top_subnote_effect = reduce(
-        (a, b) -> magnitude(a) > magnitude(b) ? a : b,
-        subnote_effects;
+        (a, b) -> magnitude(a) > magnitude(b) ? a : b, subnote_effects;
         init = nothing
       )
       if isnothing(top_subnote_effect)
         return vcat(
           [
             NoteEffect(
-              root_post_id,
-              tally.note_id,
+              root_post_id, tally.note_id,
               this_note_effect.p_given_not_shown_note,
               this_note_effect.p_given_shown_note,
             )
@@ -206,8 +171,7 @@ function score_thread(
         return vcat(
           [
             NoteEffect(
-              root_post_id,
-              tally.note_id,
+              root_post_id, tally.note_id,
               this_note_effect.p_given_not_shown_note,
               p_given_shown_this_note_supported,
             )
@@ -233,7 +197,7 @@ Find the top reply to a post in a thread.
 
   * `post_id::Int`: The unique identifier of the post.
   * `informed_tallies::Dict{Int, Vector{InformedTally}}`: The informed tallies
-    for the thread.
+    for the discussion tree opened by the post `post_id`.
 """
 function find_top_reply(
   post_id::Int,

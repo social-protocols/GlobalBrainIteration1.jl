@@ -62,7 +62,8 @@ end
 """
   relative_entropy(p::Float64, q::Float64)::Float64
 
-Calculate the relative entropy of Bernoulli distributions with parameters p and q.
+Calculate the relative entropy of Bernoulli distributions with parameters p and
+q.
 
 # Parameters
 

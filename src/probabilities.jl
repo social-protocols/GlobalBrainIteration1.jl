@@ -54,11 +54,6 @@ end
 
 A distribution for a given model, parameterized by mean and weight.
 
-# Fields
-
-  * `mean::Float64`: The mean of the distribution.
-  * `weight::Float64`: The weight of the distribution.
-
 See also [`Model`](@ref).
 """
 struct Distribution{T <: Model}
@@ -89,10 +84,6 @@ const BetaDistribution = Distribution{BetaBernoulli}
 
 Get the alpha parameter of a Beta distribution.
 
-# Parameters
-
-  * `dist::BetaDistribution`: A Beta distribution.
-
 See also [`BetaDistribution`](@ref), [`beta`](@ref).
 """
 alpha(dist::BetaDistribution)::Float64 = dist.mean * dist.weight
@@ -101,10 +92,6 @@ alpha(dist::BetaDistribution)::Float64 = dist.mean * dist.weight
   beta(dist::BetaDistribution)::Float64
 
 Get the beta parameter of a Beta distribution.
-
-# Parameters
-
-  * `dist::BetaDistribution`: A Beta distribution.
 
 See also [`BetaDistribution`](@ref), [`alpha`](@ref).
 """
@@ -215,10 +202,6 @@ end
 
 Draw a random sample from a `BetaDistribution`.
 
-# Parameters
-
-  * `dist::BetaDistribution`: The distribution to draw a sample from.
-
 See also [`BetaDistribution`](@ref).
 """
 function sample(dist::BetaDistribution)::Float64
@@ -230,10 +213,6 @@ end
   sample(dist::GammaDistribution)::Float64
 
 Draw a random sample from a `GammaDistribution`.
-
-# Parameters
-
-  * `dist::GammaDistribution`: The distribution to draw a sample from.
 
 See also [`GammaDistribution`](@ref).
 """
@@ -264,14 +243,10 @@ function Base.:-(a::Tally, b::Tuple{Int, Int})
   return T(a.count - b[1], a.sample_size - b[2])
 end
 
-# Global prior on the vote rate (votes / attention). By definition the prior average is 1,
-# because attention is calculated as the expected votes for the average post.
+# Global prior on the vote rate (votes / attention). By definition the prior
+# average is 1, because attention is calculated as the expected votes for the
+# average post.
 const GLOBAL_PRIOR_VOTE_RATE = BetaDistribution(1.0, WEIGHT_CONSTANT)
 
 const GLOBAL_PRIOR_UPVOTE_PROBABILITY = BetaDistribution(0.875, WEIGHT_CONSTANT)
-
-# TODO:
-# function calc_voterate(vote_attention_tally::Tally)::Float64
-#   return update(GLOBAL_PRIOR_VOTE_RATE, vote_attention_tally).avg
-# end
 
