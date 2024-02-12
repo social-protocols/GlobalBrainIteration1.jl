@@ -3,9 +3,9 @@
 include("src/probabilities.jl")
 include("src/types.jl")
 include("src/binary-entropy.jl")
-include("src/tallies.jl")
 include("src/constants.jl")
 include("src/algorithm.jl")
+include("src/scoredb.jl")
 
 # 
 
@@ -27,20 +27,6 @@ posts = [
   Post(7, 6, 0),
 ]
 
-# post_tally = BernoulliTally(26, 51)
-
-# informed_tallies_vec = [
-#   # Depth-first traversal order, starting with root
-#   DetailedTally(nothing, 1, BernoulliTally(20, 30), BernoulliTally(0, 0), BernoulliTally(0, 0)),
-#   DetailedTally(1, 2, BernoulliTally(5, 10), BernoulliTally(8, 14), BernoulliTally(6, 9)),
-#   DetailedTally(2, 4, BernoulliTally(12, 12), BernoulliTally(8, 9), BernoulliTally(0, 10)),
-#   DetailedTally(2, 5, BernoulliTally(5, 7), BernoulliTally(5, 6), BernoulliTally(7, 13)),
-#   DetailedTally(1, 3, BernoulliTally(8, 11), BernoulliTally(9, 16), BernoulliTally(1, 13)),
-#   DetailedTally(3, 6, BernoulliTally(3, 4), BernoulliTally(5, 8), BernoulliTally(2, 3)),
-#   DetailedTally(6, 7, BernoulliTally(8, 15), BernoulliTally(7, 10), BernoulliTally(3, 15)),
-# ]
-
-
 struct TestTree <: TalliesTree
   tally::DetailedTally
   children::Vector{TalliesTree}
@@ -57,31 +43,54 @@ function tally(t::TestTree)
 	return t.tally
 end
 
+const t = BernoulliTally
 
 test_trees = [ 
-	TestTree(DetailedTally(707, nothing, 1, BernoulliTally(20, 30), BernoulliTally(0, 0), BernoulliTally(0, 0)), [
-    TestTree(DetailedTally(707, 1, 2, BernoulliTally(5, 10), BernoulliTally(8, 14), BernoulliTally(6, 9)), [        
-        TestTree(DetailedTally(707, 2, 4, BernoulliTally(12, 12), BernoulliTally(8, 9), BernoulliTally(0, 10)),[])
-        TestTree(DetailedTally(707, 2, 5, BernoulliTally(5, 7), BernoulliTally(5, 6), BernoulliTally(7, 13)),[])
+	TestTree(DetailedTally(707, nothing, 1, t(0, 0), t(0, 0), t(0, 0), t(20, 30)), [
+    TestTree(DetailedTally(707, 1, 2, t(6, 16), t(8, 14), t(6, 9), t(7, 14)), [        
+        TestTree(DetailedTally(707, 2, 4, t(7, 14), t(8, 9), t(0, 10), t(12, 12)),[])
+        TestTree(DetailedTally(707, 2, 5, t(7, 14), t(5, 6), t(7, 13), t(5, 7)),[])
     ]),
-    TestTree(DetailedTally(707, 1, 3, BernoulliTally(8, 11), BernoulliTally(9, 16), BernoulliTally(1, 13)), [
-        TestTree(DetailedTally(707, 3, 6, BernoulliTally(3, 4), BernoulliTally(5, 8), BernoulliTally(2, 3)), [
-           TestTree(DetailedTally(707, 6, 7, BernoulliTally(8, 15), BernoulliTally(7, 10), BernoulliTally(3, 15)),[])
+    TestTree(DetailedTally(707, 1, 3, t(6, 16), t(9, 16), t(1, 13), t(8, 11)), [
+        TestTree(DetailedTally(707, 3, 6, t(4, 8), t(5, 8), t(2, 3), t(3, 4)), [
+           TestTree(DetailedTally(707, 6, 7, t(4, 18), t(7, 10), t(3, 15), t(8, 15)),[])
         ])
     ])
   ])
 ];
 
 
-
+function print_results(results::Vector{ScoreData})
+	for r in results
+		println("Got result: ", r)
+	end
+end
 
 # informed_tallies_generator = Base.Generator(identity, informed_tallies_vec)
 include("src/algorithm.jl")
-estimate = score_posts(test_trees)
+scores = score_posts(test_trees, print_results)
 
-include("scripts/tallies.jl")
-tallies = getDetailedTallies(3, nothing)
-estimate = score_posts(tallies)
+
+include("src/scoredb.jl")
+
+db = get_score_db()
+
+tallies = getDetailedTallies(db, nothing, nothing)
+
+snapshot_timestamp = 1234
+
+write_to_db = (score_data) -> begin
+	for s in score_data  
+		insert_score_data(db, s, snapshot_timestamp)
+	end
+end
+
+
+# Connect to the SQLite database
+
+scores = score_posts(tallies, write_to_db)
+
+close(db)
 
 # score_posts(tallies)
 

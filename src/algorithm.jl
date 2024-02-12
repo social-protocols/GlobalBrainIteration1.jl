@@ -1,5 +1,30 @@
 
 """
+  DetailedTally
+
+All tallies for a post
+
+# Fields
+
+  * `tag_id::Int64`: The tag id.
+  * `parent_id::Union{Int64, Nothing}`: The unique identifier of the parent of this post if any.
+  * `post_id::Int64`: The unique identifier of this post.
+  * `parent::BernoulliTally`: The current tally tally for the **parent of this post**
+  * `uninformed::BernoulliTally`: The tally for the **parent of this post** given user was not informed of this note.
+  * `informed::BernoulliTally`: The tally for the **parent of this post** given user was informed of this note.
+  * `self::BernoulliTally`: The current tally for this post.
+"""
+Base.@kwdef struct DetailedTally
+  tag_id::Int64
+  parent_id::Union{Int64,Nothing}
+  post_id::Int64
+  parent::BernoulliTally
+  uninformed::BernoulliTally
+  informed::BernoulliTally
+  self::BernoulliTally
+end
+
+"""
   NoteEffect
 
 The effect of a note on a post, given by the upvote probabilities given the
@@ -23,9 +48,12 @@ Base.@kwdef struct NoteEffect
 end
 
 Base.@kwdef struct ScoreData
+  tag_id::Int64
   parent_id::Union{Int64, Nothing}
-  effect::Union{NoteEffect, Nothing}
   post_id::Int64
+  effect::Union{NoteEffect, Nothing}
+  self_probability::Float64
+  self_tally::BernoulliTally
   top_note_effect::Union{NoteEffect, Nothing}
 end
 
@@ -93,31 +121,40 @@ was shown and not shown respectively.
     note was not shown.
 """
 function calc_note_support(
-  informed_probability::Float64,
-  uninformed_probability::Float64
+  e::NoteEffect
 )::Float64
   # TODO: this assert doesn't make sense conceptually -> handle p = 0 cases
-  @assert(informed_probability > 0 && uninformed_probability > 0, "upvote probabilities must be positive")
-  return informed_probability / (informed_probability + uninformed_probability)
+  @assert(e.informed_probability > 0 && e.uninformed_probability > 0, "upvote probabilities must be positive")
+  return e.informed_probability / (e.informed_probability + e.uninformed_probability)
 end
+
+
+abstract type TalliesTree end
+
+# There are no interface types in Julie, but if there were, we would define something like this
+# interface TalliesTree
+#     tally::DetailedTally
+#     children::TalliesTree[]
+# end
+
 
 """
   score_posts(
-    parent_id::Int,
-    tallies}
+    tallies
+    , output_results
   )::Vector{NoteEffect}
 
 Calculate (supported) scores for all post/note combinations in a thread.
 
 # Parameters
 
-  * `parent_id::Union{Int, Nothing}`: The unique identifier of the root post, or nothing for top-level posts
-  * `tallies}`: The informed tallies
-    for the thread.
+  * `tallies`: An interatable sequence of TallyTrees
+  * `output_results`: A function to call to output each ScoreData result
 """
 
 function score_posts(
   tallies
+  , output_results
 )::Vector{ScoreData}
 
   return mapreduce(
@@ -125,11 +162,17 @@ function score_posts(
 
       tally = t.tally
 
-      subnote_score_data = score_posts(children(t))
+      subnote_score_data = score_posts(children(t), output_results)
 
       this_note_effect = (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
 
+      upvote_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+        (x -> update(x, tally.self)) |>
+        (x -> x.mean)
+
       # Find the top subnote
+      # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
+      # amount of attention received? In general, we need to deal with multiple subnotes better
       top_subnote_effect = reduce(
         (a, b) -> begin 
             ma = (a === nothing) ? 0 : magnitude(a)
@@ -140,36 +183,41 @@ function score_posts(
         init = nothing
       )
 
-
-      this_note_effect_supported = isnothing(this_note_effect) ? nothing : begin
+      this_note_effect_supported = 
+        isnothing(this_note_effect) ? nothing : begin
+          
           informed_probability_supported = 
             isnothing(top_subnote_effect) ? 
             this_note_effect.informed_probability : 
             begin
-              support = calc_note_support(
-                top_subnote_effect.informed_probability,
-                top_subnote_effect.uninformed_probability
-              )
-
+              support = calc_note_support(top_subnote_effect)
               this_note_effect.informed_probability * support + this_note_effect.uninformed_probability * (1 - support)
             end
-        something(NoteEffect(
-          this_note_effect.post_id, 
-          this_note_effect.note_id,
-          this_note_effect.uninformed_probability,
-          informed_probability_supported,
-        ), nothing)
-      end
+          
+          something(NoteEffect(
+            this_note_effect.post_id, 
+            this_note_effect.note_id,
+            this_note_effect.uninformed_probability,
+            informed_probability_supported,
+          ), nothing)
+        
+        end
+
 
 
       this_score_data = ScoreData(
+        tally.tag_id,
         tally.parent_id, 
-        this_note_effect_supported,
         tally.post_id,
+        this_note_effect_supported,
+        upvote_probability,
+        tally.self,
         top_subnote_effect,
       )
 
-      return vcat([this_score_data], subnote_score_data)
+      output_results([this_score_data])
+
+      return [this_score_data]
     end,
     vcat,
     tallies;
