@@ -1,25 +1,3 @@
-"""
-  InformedTally
-
-All tallies for a post/note combination.
-
-# Fields
-
-  * `post_id::Int64`: The unique identifier of the post.
-  * `note_id::Int64`: The unique identifier of the note.
-  * `for_note::BernoulliTally`: The tally for the note.
-  * `for_post_given_not_shown_note::BernoulliTally`: The tally for the post
-    given the note was not shown.
-  * `for_post_given_shown_note::BernoulliTally`: The tally for the post given
-    the note was shown.
-"""
-Base.@kwdef struct InformedTally
-  post_id::Int64
-  note_id::Int64
-  for_note::BernoulliTally
-  for_post_given_not_shown_note::BernoulliTally
-  for_post_given_shown_note::BernoulliTally
-end
 
 """
   NoteEffect
@@ -32,17 +10,25 @@ note was shown and not shown respectively.
   * `post_id::Int64`: The unique identifier of the post.
   * `note_id::Union{Int64, Nothing}`: The unique identifier of the note. If
     `nothing`, then this is the root post.
-  * `p_given_not_shown_note::Float64`: The probability of an upvote given the
+  * `uninformed_probability::Float64`: The probability of an upvote given the
     note was not shown.
-  * `p_given_shown_note::Float64`: The probability of an upvote given the note
+  * `informed_probability::Float64`: The probability of an upvote given the note
     was shown.
 """
 Base.@kwdef struct NoteEffect
   post_id::Int64
   note_id::Union{Int64, Nothing}
-  p_given_not_shown_note::Float64
-  p_given_shown_note::Float64
+  uninformed_probability::Float64
+  informed_probability::Float64
 end
+
+Base.@kwdef struct ScoreData
+  parent_id::Union{Int64, Nothing}
+  effect::Union{NoteEffect, Nothing}
+  post_id::Int64
+  top_note_effect::Union{NoteEffect, Nothing}
+end
+
 
 """
   magnitude(effect::Union{NoteEffect, Nothing})::Float64
@@ -57,47 +43,43 @@ effect of `Nothing` is 0.0 by definition.
     of.
 """
 function magnitude(effect::Union{NoteEffect, Nothing})::Float64
-  # TODO: the effect of "nothing" doesn't really make sense, this is a hack for
-  #       the score_thread function to work.
-  if isnothing(effect)
-    return 0.0
-  end
-  return abs(effect.p_given_not_shown_note - effect.p_given_shown_note)
+  return abs(effect.uninformed_probability - effect.informed_probability)
 end
 
+
 """
-  calc_note_effect(tally::InformedTally)::NoteEffect
+  calc_note_effect(tally::DetailedTally)::NoteEffect
 
 Calculate the effect of a note on a post from the informed tally for the note
 and the post.
 
 # Parameters
 
-  * `tally::InformedTally`: The informed tallies for the note and the post.
+  * `tally::DetailedTally`: The informed tallies for the note and the post.
 """
-function calc_note_effect(tally::InformedTally)::NoteEffect
-  p_given_not_shown_note = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-    (x -> update(x, tally.for_post_given_shown_note)) |>
+function calc_note_effect(tally::DetailedTally)::NoteEffect
+  uninformed_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+    (x -> update(x, tally.uninformed)) |>
     (x -> x.mean)
 
-  p_given_shown_note = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-    (x -> update(x, tally.for_post_given_not_shown_note)) |>
-    (x -> reset_weight(x, WEIGHT_CONSTANT)) |>
-    (x -> update(x, tally.for_post_given_shown_note)) |>
+  informed_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+    (x -> update(x, tally.uninformed)) |>
+    (x -> reset_weight(x, GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
+    (x -> update(x, tally.informed)) |>
     (x -> x.mean)
 
   return NoteEffect(
-    post_id = tally.post_id,
-    note_id = tally.note_id,
-    p_given_not_shown_note = p_given_not_shown_note,
-    p_given_shown_note = p_given_shown_note,
+    post_id = tally.parent_id,
+    note_id = tally.post_id,
+    uninformed_probability = uninformed_probability,
+    informed_probability = informed_probability,
   )
 end
 
 """
   calc_note_support(
-    p_given_shown_note::Float64,
-    p_given_not_shown_note::Float64
+    informed_probability::Float64,
+    uninformed_probability::Float64
   )::Float64
 
 Calculate the support for a note given the upvote probabilities given the note
@@ -105,113 +87,96 @@ was shown and not shown respectively.
 
 # Parameters
 
-  * `p_given_shown_note::Float64`: The probability of an upvote given the note
+  * `informed_probability::Float64`: The probability of an upvote given the note
     was shown.
-  * `p_given_not_shown_note::Float64`: The probability of an upvote given the
+  * `uninformed_probability::Float64`: The probability of an upvote given the
     note was not shown.
 """
 function calc_note_support(
-  p_given_shown_note::Float64,
-  p_given_not_shown_note::Float64
+  informed_probability::Float64,
+  uninformed_probability::Float64
 )::Float64
   # TODO: this assert doesn't make sense conceptually -> handle p = 0 cases
-  @assert(p_given_shown_note > 0 && p_given_not_shown_note > 0, "upvote probabilities must be positive")
-  return p_given_shown_note / (p_given_shown_note + p_given_not_shown_note)
+  @assert(informed_probability > 0 && uninformed_probability > 0, "upvote probabilities must be positive")
+  return informed_probability / (informed_probability + uninformed_probability)
 end
 
 """
-  score_thread(
-    root_post_id::Int,
-    informed_tallies::Dict{Int, Vector{InformedTally}}
+  score_posts(
+    parent_id::Int,
+    tallies}
   )::Vector{NoteEffect}
 
 Calculate (supported) scores for all post/note combinations in a thread.
 
 # Parameters
 
-  * `root_post_id::Int`: The unique identifier of the root post.
-  * `informed_tallies::Dict{Int, Vector{InformedTally}}`: The informed tallies
+  * `parent_id::Union{Int, Nothing}`: The unique identifier of the root post, or nothing for top-level posts
+  * `tallies}`: The informed tallies
     for the thread.
 """
-function score_thread(
-  root_post_id::Int,
-  informed_tallies::Dict{Int, Vector{InformedTally}}
-)::Vector{NoteEffect}
-  tallies = informed_tallies[root_post_id]
-  if isempty(tallies)
-    return NoteEffect[]
-  end
+
+function score_posts(
+  tallies
+)::Vector{ScoreData}
+
   return mapreduce(
-    (tally) -> begin
-      subnote_effects = score_thread(tally.note_id, informed_tallies)
-      this_note_effect = calc_note_effect(tally)
+    (t) -> begin
+
+      tally = t.tally
+
+      subnote_score_data = score_posts(children(t))
+
+      this_note_effect = (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
+
+      # Find the top subnote
       top_subnote_effect = reduce(
-        (a, b) -> magnitude(a) > magnitude(b) ? a : b, subnote_effects;
+        (a, b) -> begin 
+            ma = (a === nothing) ? 0 : magnitude(a)
+            mb = (b === nothing) ? 0 : magnitude(b)
+            ma > mb ? a : b 
+        end, 
+        [x.effect for x in subnote_score_data if x.parent_id === tally.post_id];
         init = nothing
       )
-      if isnothing(top_subnote_effect)
-        return vcat(
-          [
-            NoteEffect(
-              root_post_id, tally.note_id,
-              this_note_effect.p_given_not_shown_note,
-              this_note_effect.p_given_shown_note,
-            )
-          ],
-          subnote_effects
-        )
-      else
-        support = calc_note_support(
-          top_subnote_effect.p_given_shown_note,
-          top_subnote_effect.p_given_not_shown_note
-        )
-        p_given_shown_this_note_supported =
-          this_note_effect.p_given_shown_note * support
-            + this_note_effect.p_given_not_shown_note * (1 - support)
-        return vcat(
-          [
-            NoteEffect(
-              root_post_id, tally.note_id,
-              this_note_effect.p_given_not_shown_note,
-              p_given_shown_this_note_supported,
-            )
-          ],
-          subnote_effects
-        )
+
+
+      this_note_effect_supported = isnothing(this_note_effect) ? nothing : begin
+          informed_probability_supported = 
+            isnothing(top_subnote_effect) ? 
+            this_note_effect.informed_probability : 
+            begin
+              support = calc_note_support(
+                top_subnote_effect.informed_probability,
+                top_subnote_effect.uninformed_probability
+              )
+
+              this_note_effect.informed_probability * support + this_note_effect.uninformed_probability * (1 - support)
+            end
+        something(NoteEffect(
+          this_note_effect.post_id, 
+          this_note_effect.note_id,
+          this_note_effect.uninformed_probability,
+          informed_probability_supported,
+        ), nothing)
       end
+
+
+      this_score_data = ScoreData(
+        tally.parent_id, 
+        this_note_effect_supported,
+        tally.post_id,
+        top_subnote_effect,
+      )
+
+      return vcat([this_score_data], subnote_score_data)
     end,
     vcat,
-    tallies
+    tallies;
+    init = []
   )
 end
 
-"""
-  find_top_reply(
-    post_id::Int,
-    informed_tallies::Dict{Int, Vector{InformedTally}}
-  )::Union{NoteEffect, Nothing}
 
-Find the top reply to a post in a thread.
 
-# Parameters
-
-  * `post_id::Int`: The unique identifier of the post.
-  * `informed_tallies::Dict{Int, Vector{InformedTally}}`: The informed tallies
-    for the discussion tree opened by the post `post_id`.
-"""
-function find_top_reply(
-  post_id::Int,
-  informed_tallies::Dict{Int, Vector{InformedTally}}
-)::Union{NoteEffect, Nothing}
-  effects = score_thread(post_id, informed_tallies)
-  if isempty(effects)
-    return nothing
-  end
-  direct_children_effects = [n for n in effects if n.post_id == post_id]
-  return reduce(
-    (a, b) -> magnitude(a) > magnitude(b) ? a : b,
-    direct_children_effects;
-    init = nothing
-  )
-end
 

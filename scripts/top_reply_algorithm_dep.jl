@@ -3,7 +3,7 @@ using GlobalBrain
 function find_top_reply(
   post_id::Int,
   post_tally::BernoulliTally,
-  informed_tallies::Dict{Int, Vector{InformedTally}}
+  informed_tallies::Dict{Int, Vector{DetailedTally}}
 )::NoteEffect
   tallies = informed_tallies[post_id]
   p_prior = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>

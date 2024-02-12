@@ -1,5 +1,6 @@
 using GlobalBrain
 
+
 # --- Discussion tree:
 # 1
 # |-2
@@ -21,15 +22,17 @@ posts = [
 # post_tally = BernoulliTally(26, 51)
 
 informed_tallies_vec = [
-  InformedTally(1, 2, BernoulliTally(5, 10), BernoulliTally(8, 14), BernoulliTally(6, 9)),
-  InformedTally(1, 3, BernoulliTally(8, 11), BernoulliTally(9, 16), BernoulliTally(1, 13)),
-  InformedTally(2, 4, BernoulliTally(12, 12), BernoulliTally(8, 9), BernoulliTally(0, 10)),
-  InformedTally(2, 5, BernoulliTally(5, 7), BernoulliTally(5, 6), BernoulliTally(7, 13)),
-  InformedTally(3, 6, BernoulliTally(3, 4), BernoulliTally(5, 8), BernoulliTally(2, 3)),
-  InformedTally(6, 7, BernoulliTally(8, 15), BernoulliTally(7, 10), BernoulliTally(3, 15)),
+  DetailedTally(1, 2, BernoulliTally(5, 10), BernoulliTally(8, 14), BernoulliTally(6, 9)),
+  DetailedTally(1, 3, BernoulliTally(8, 11), BernoulliTally(9, 16), BernoulliTally(1, 13)),
+  DetailedTally(2, 4, BernoulliTally(12, 12), BernoulliTally(8, 9), BernoulliTally(0, 10)),
+  DetailedTally(2, 5, BernoulliTally(5, 7), BernoulliTally(5, 6), BernoulliTally(7, 13)),
+  DetailedTally(3, 6, BernoulliTally(3, 4), BernoulliTally(5, 8), BernoulliTally(2, 3)),
+  DetailedTally(6, 7, BernoulliTally(8, 15), BernoulliTally(7, 10), BernoulliTally(3, 15)),
 ]
 
-informed_tallies = Dict(p.id => InformedTally[] for p in posts)
+
+
+informed_tallies = Dict(p.id => DetailedTally[] for p in posts)
 for it in informed_tallies_vec
   if haskey(informed_tallies, it.post_id)
     push!(informed_tallies[it.post_id], it)
@@ -47,7 +50,7 @@ end
 
 println("--------------")
 println("Starting computation...")
-estimate = score_thread(1, informed_tallies)
+estimate = score_posts(1, informed_tallies)
 
 println("--------------")
 println("Results: ")

@@ -1,10 +1,9 @@
 module GlobalBrain
 
-const WEIGHT_CONSTANT = 2.3
-
 include("types.jl")
 include("binary-entropy.jl")
 include("probabilities.jl")
+include("constants.jl")
 include("algorithm.jl")
 
 # --- Exports from probabilities.jl
@@ -14,7 +13,7 @@ export Model
 export BetaBernoulli
 export GammaPoisson
 export Tally
-export InformedTally
+export DetailedTally
 export Model
 export BetaBernoulli
 export GammaPoisson
@@ -32,8 +31,12 @@ export reset_weight
 export sample
 export +
 export -
-export GLOBAL_PRIOR_VOTE_RATE
+
+# --- Exports from constants.jl
+export GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE
 export GLOBAL_PRIOR_UPVOTE_PROBABILITY
+export GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE
+
 
 # --- Exports from .BinaryEntropy
 # -------------------------------
@@ -53,7 +56,8 @@ export Post
 export Vote
 
 export NoteEffect
-export score_thread
+export score_posts
 export find_top_reply
+
 
 end

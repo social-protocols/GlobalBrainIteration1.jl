@@ -100,13 +100,3 @@ function +(a::Tally, b::Tuple{Int, Int})
   return T(a.count + b[1], a.sample_size + b[2])
 end
 
-
-
-
-const WEIGHT_CONSTANT = 2.3
-
-# Global prior on the vote rate (votes / attention). By definition the prior average is 1,
-# because attention is calculated as the expected votes for the average post.
-const GLOBAL_PRIOR_VOTE_RATE = BetaDistribution(1.0, WEIGHT_CONSTANT)
-
-const GLOBAL_PRIOR_UPVOTE_PROBABILITY = BetaDistribution(0.875, WEIGHT_CONSTANT)

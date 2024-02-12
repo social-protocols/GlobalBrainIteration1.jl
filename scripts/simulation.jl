@@ -6,7 +6,7 @@ end
 function create_random_discussion(
   n_posts::Int,
   max_votes_per_unit::Int,
-)::Tuple{BernoulliTally, Vector{Post}, Dict{Int, Vector{InformedTally}}}
+)::Tuple{BernoulliTally, Vector{Post}, Dict{Int, Vector{DetailedTally}}}
   random_discussion_tree = uniform_tree(n_posts)
   posts = vcat(
     [Post(1, nothing)],
@@ -16,7 +16,7 @@ function create_random_discussion(
   # success count -> random Bernoulli
   sample_size = rand(1:max_votes_per_unit)
   informed_tallies = [
-    InformedTally(
+    DetailedTally(
       post_id = p.parent,
       note_id = p.id,
       for_note = random_bernoulli_tally(sample_size),
@@ -26,7 +26,7 @@ function create_random_discussion(
     for p in posts
     if !isnothing(p.parent)
   ]
-  informed_tallies_dict = Dict(p.id => InformedTally[] for p in posts)
+  informed_tallies_dict = Dict(p.id => DetailedTally[] for p in posts)
   for it in informed_tallies
     if haskey(informed_tallies_dict, it.post_id)
       push!(informed_tallies_dict[it.post_id], it)
