@@ -78,4 +78,7 @@ export Vote
 export NoteEffect
 export score_posts
 
+export TalliesTree 
+export ScoreData
+
 end
