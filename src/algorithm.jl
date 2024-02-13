@@ -90,72 +90,76 @@ Calculate (supported) scores for all post/note combinations in a thread.
     * `output_results`: A function to call to output each ScoreData result
 """
 function score_posts(tallies, output_results)::Vector{ScoreData}
-    return mapreduce(
-        (t) -> begin
 
-            tally = t.tally
+   function score_post(t::TalliesTree)
 
-            subnote_score_data = score_posts(children(t), output_results)
+    tally = t.tally
 
-            this_note_effect =
-                (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
+    subnote_score_data = score_posts(children(t), output_results)
 
-            upvote_probability =
-                GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-                (x -> update(x, tally.self)) |>
-                (x -> x.mean)
+    this_note_effect =
+        (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
 
-            # Find the top subnote
-            # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
-            # amount of attention received? In general, we need to deal with multiple subnotes better
-            top_subnote_effect = reduce(
-                (a, b) -> begin
-                    ma = (a === nothing) ? 0 : magnitude(a)
-                    mb = (b === nothing) ? 0 : magnitude(b)
-                    ma > mb ? a : b
-                end,
-                [x.effect for x in subnote_score_data if x.parent_id === tally.post_id];
-                init = nothing,
-            )
+    upvote_probability =
+        GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+        (x -> update(x, tally.self)) |>
+        (x -> x.mean)
 
-            this_note_effect_supported =
-                isnothing(this_note_effect) ? nothing :
-                begin
-                    informed_probability_supported =
-                        isnothing(top_subnote_effect) ?
-                        this_note_effect.informed_probability :
-                        begin
-                            support = calc_note_support(top_subnote_effect)
-                            this_note_effect.informed_probability * support +
-                            this_note_effect.uninformed_probability * (1 - support)
-                        end
-                    something(
-                        NoteEffect(
-                            this_note_effect.post_id,
-                            this_note_effect.note_id,
-                            this_note_effect.uninformed_probability,
-                            informed_probability_supported,
-                        ),
-                        nothing,
-                    )
-                end
-
-            this_score_data = ScoreData(
-                tally.tag_id,
-                tally.parent_id,
-                tally.post_id,
-                this_note_effect_supported,
-                upvote_probability,
-                tally.self,
-                top_subnote_effect,
-            )
-
-            output_results([this_score_data])
-
-            return [this_score_data]
+    # Find the top subnote
+    # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
+    # amount of attention received? In general, we need to deal with multiple subnotes better
+    top_subnote_effect = reduce(
+        (a, b) -> begin
+            ma = (a === nothing) ? 0 : magnitude(a)
+            mb = (b === nothing) ? 0 : magnitude(b)
+            ma > mb ? a : b
         end,
-        vcat,
-        tallies;
-        init = [],
+        [x.effect for x in subnote_score_data if x.parent_id === tally.post_id];
+        init = nothing,
     )
+
+    this_note_effect_supported =
+        isnothing(this_note_effect) ? nothing :
+        begin
+            informed_probability_supported =
+                isnothing(top_subnote_effect) ?
+                this_note_effect.informed_probability :
+                begin
+                    support = calc_note_support(top_subnote_effect)
+                    this_note_effect.informed_probability * support +
+                    this_note_effect.uninformed_probability * (1 - support)
+                end
+            something(
+                NoteEffect(
+                    this_note_effect.post_id,
+                    this_note_effect.note_id,
+                    this_note_effect.uninformed_probability,
+                    informed_probability_supported,
+                ),
+                nothing,
+            )
+        end
+
+    this_score_data = ScoreData(
+        tally.tag_id,
+        tally.parent_id,
+        tally.post_id,
+        this_note_effect_supported,
+        upvote_probability,
+        tally.self,
+        top_subnote_effect,
+    )
+
+    output_results([this_score_data])
+
+    return [this_score_data]
+  
+  end
+
+  return mapreduce(
+      score_post,
+      vcat,
+      tallies;
+      init = [],
+  )
 end
