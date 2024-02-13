@@ -9,3 +9,6 @@ dev:
 db:
   sqlite3 $VOTE_DATABASE_PATH
 
+format:
+  julia --eval "using JuliaFormatter; format(pwd())"
+

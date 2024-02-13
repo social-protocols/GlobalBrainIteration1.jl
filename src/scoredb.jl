@@ -8,55 +8,49 @@ function get_score_db()::SQLite.DB
 
     # During development, just drop and create this db each time.
     DBInterface.execute(db, "drop table if exists scoreData")
-    DBInterface.execute(db, """
-        create table ScoreData(
-            tagId int
-            , parentId int
-            , postId int not null
-            , topNoteId int
-            , parentUninformedP real
-            , parentInformedP real
-            , uninformedP real
-            , informedP real
-            , count integer
-            , total integer
-            , selfP real not null
-            , snapshotTimestamp integer not null
-        ) strict
+    DBInterface.execute(
+        db,
         """
-    );
+            create table ScoreData(
+                tagId int
+                , parentId int
+                , postId int not null
+                , topNoteId int
+                , parentUninformedP real
+                , parentInformedP real
+                , uninformedP real
+                , informedP real
+                , count integer
+                , total integer
+                , selfP real not null
+                , snapshotTimestamp integer not null
+            ) strict
+        """,
+    )
 
     return db
 end
 
 
-function to_detailed_tally(result)::DetailedTally 
-   # parentId = missing(result[:parentId]) ? nothing : result[:parentId]
-   # println("Got result from DB", result)
-   return DetailedTally(
+function to_detailed_tally(result)::DetailedTally
+    # parentId = missing(result[:parentId]) ? nothing : result[:parentId]
+    # println("Got result from DB", result)
+    return DetailedTally(
         result[:tagId],
         result[:parentId] == 0 ? nothing : result[:parentId],
         result[:postId],
-        BernoulliTally(
-            result[:parentCount],
-            result[:parentTotal],
-        ),
-        BernoulliTally(
-            result[:uninformedCount],
-            result[:uninformedTotal],
-        ),
-        BernoulliTally(
-            result[:informedCount],
-            result[:informedTotal],
-        ),
-        BernoulliTally(
-            result[:selfCount],
-            result[:selfTotal],
-        ),
+        BernoulliTally(result[:parentCount], result[:parentTotal]),
+        BernoulliTally(result[:uninformedCount], result[:uninformedTotal]),
+        BernoulliTally(result[:informedCount], result[:informedTotal]),
+        BernoulliTally(result[:selfCount], result[:selfTotal]),
     )
 end
 
-function get_detailed_tallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId::Union{Int, Nothing})
+function get_detailed_tallies(
+    db::SQLite.DB,
+    tagId::Union{Int,Nothing},
+    postId::Union{Int,Nothing},
+)
     sql_query = """
         select 
             tagId
@@ -76,7 +70,7 @@ function get_detailed_tallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId:
             and postId = ?
     """
 
-    if postId === nothing 
+    if postId === nothing
         sql_query = """
             select 
                 tagId
@@ -101,33 +95,54 @@ function get_detailed_tallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId:
 
     # Bind the value to the placeholder
     # Execute the query and get an iterator over the results
-    results = DBInterface.execute(db,sql_query, [tagId, postId])
+    results = DBInterface.execute(db, sql_query, [tagId, postId])
 
-    return ( SQLTalliesTree(to_detailed_tally(row), db) for row in results) 
+    return (SQLTalliesTree(to_detailed_tally(row), db) for row in results)
 end
 
 function insert_score_data(db::SQLite.DB, score_data::ScoreData, snapshot_timestamp::Int64)
     sql_query = """
-        insert into ScoreData(tagId, parentId, postId, topNoteId, parentUninformedP, parentInformedP, uninformedP, informedP, count, total, selfP, snapshotTimestamp) values (?,?,?,?,?,?,?,?,?,?,?,?)
+        insert into ScoreData(
+            tagId
+            , parentId
+            , postId
+            , topNoteId
+            , parentUninformedP
+            , parentInformedP
+            , uninformedP
+            , informedP
+            , count
+            , total
+            , selfP
+            , snapshotTimestamp
+        ) values (?,?,?,?,?,?,?,?,?,?,?,?)
     """
 
     # Bind the value to the placeholder
     # Execute the query and get an iterator over the results
-    results = DBInterface.execute(db,sql_query, [
-        score_data.tag_id,
-        score_data.parent_id,
-        score_data.post_id, 
-        score_data.top_note_effect !== nothing ? score_data.top_note_effect.note_id : nothing,
-        score_data.effect !== nothing ? score_data.effect.uninformed_probability : nothing,
-        score_data.effect !== nothing ? score_data.effect.informed_probability : nothing,
-        score_data.top_note_effect !== nothing ? score_data.top_note_effect.uninformed_probability : nothing,
-        score_data.top_note_effect !== nothing ? score_data.top_note_effect.informed_probability : nothing,
-        score_data.self_tally.count,
-        score_data.self_tally.sample_size,
-        score_data.self_probability,
-        snapshot_timestamp
-    ])
+    results = DBInterface.execute(
+        db,
+        sql_query,
+        [
+            score_data.tag_id,
+            score_data.parent_id,
+            score_data.post_id,
+            score_data.top_note_effect !== nothing ?
+            score_data.top_note_effect.note_id : nothing,
+            score_data.effect !== nothing ? score_data.effect.uninformed_probability :
+            nothing,
+            score_data.effect !== nothing ? score_data.effect.informed_probability :
+            nothing,
+            score_data.top_note_effect !== nothing ?
+            score_data.top_note_effect.uninformed_probability : nothing,
+            score_data.top_note_effect !== nothing ?
+            score_data.top_note_effect.informed_probability : nothing,
+            score_data.self_tally.count,
+            score_data.self_tally.sample_size,
+            score_data.self_probability,
+            snapshot_timestamp,
+        ],
+    )
 
     println("Results", results)
 end
-
