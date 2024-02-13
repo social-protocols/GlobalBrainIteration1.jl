@@ -231,46 +231,105 @@ Base.@kwdef struct ScoreData
 end
 
 
-# There are no interface types in Julie, but if there were, we would define something like this
-# interface TalliesTree
-#     tally::DetailedTally
-#     children::TalliesTree[]
-# end
+"""
+    TalliesTree
 
+Abstract type for a tree of tallies. For any subtype of `TalliesTree`s, a
+`children` and a `tally` method must be implemented. If none are found, the
+default methods `children(t::TalliesTree)::Vector{TalliesTree}` and
+`tally(t::TalliesTree)::DetailedTally` will raise an error.
+"""
 abstract type TalliesTree end
 
-function children(t::TalliesTree) end
 
+"""
+    children(t::TalliesTree)::Vector{TalliesTree}
+
+Default `children` method for `TalliesTree`. It throws an error since a
+`children` method should be implemented for any subtype of `TalliesTree`.
+
+See also [`TalliesTree`](@ref).
+"""
+function children(t::TalliesTree)
+    error("The children method is not implemented for type $(typeof(t))")
+end
+
+"""
+    tally(t::TalliesTree)::DetailedTally
+
+Default `tally` method for `TalliesTree`. It throws an error since a
+`tally` method should be implemented for any subtype of `TalliesTree`.
+
+See also [`TalliesTree`](@ref).
+"""
+function tally(t::TalliesTree)
+    error("The tally method is not implemented for type $(typeof(t))")
+end
+
+
+"""
+    SQLTalliesTree <: TalliesTree
+
+A data structure to represent a tree of tallies stored in an SQLite database.
+"""
 struct SQLTalliesTree <: TalliesTree
     tally::DetailedTally
     db::SQLite.DB
 end
 
 
+"""
+    children(t::SQLTalliesTree)
+
+Get the children of a `SQLTalliesTree`. As `SQLTalliesTree`s are stored in a
+SQLite database, this function will query the database for the children.
+"""
+function children(t::SQLTalliesTree)::Vector{SQLTalliesTree}
+    return get_detailed_tallies(t.db, t.tally.tag_id, t.tally.post_id)
+end
+
+
+"""
+    tally(t::SQLTalliesTree)
+
+Get the tally of a `SQLTalliesTree`.
+"""
+function tally(t::SQLTalliesTree)::DetailedTally
+    return t.tally
+end
+
+
+"""
+    MemoryTalliesTree <: TalliesTree
+
+A data structure to represent a tree of tallies stored in memory.
+"""
 struct MemoryTalliesTree <: TalliesTree
   tally::DetailedTally
   children::Vector{TalliesTree}
 end
 
 
+"""
+    children(t::MemoryTalliesTree)
+
+Get the children of a `MemoryTalliesTree`.
+"""
 function children(t::MemoryTalliesTree) 
 	return t.children
 end
 
 
+"""
+    tally(t::MemoryTalliesTree)
+
+Get the tally of a `MemoryTalliesTree`.
+"""
 function tally(t::MemoryTalliesTree)
 	return t.tally
 end
 
 
-function children(t::SQLTalliesTree)
-    return get_detailed_tallies(t.db, t.tally.tag_id, t.tally.post_id)
-end
-
-function tally(t::SQLTalliesTree)
-    return t.tally
-end
-
-function tally(t::DetailedTally)
-    return t.self
-end
+# function tally(t::DetailedTally)
+#     return t.self
+# end
