@@ -26,14 +26,21 @@ and the post.
     * `tally::DetailedTally`: The informed tallies for the note and the post.
 """
 function calc_note_effect(tally::DetailedTally)::NoteEffect
-    uninformed_probability =
+    overall_probability =
         GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+        (x -> update(x, tally.parent)) |>
+        (x -> x.mean)
+
+
+    uninformed_probability =
+        overall_probability |>
+        (x -> reset_weight(x, GLOBAL_PRIOR_UNINFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.uninformed)) |>
         (x -> x.mean)
 
     informed_probability =
         GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-        (x -> update(x, tally.uninformed)) |>
+        (x -> update(x, tally.overall_probability)) |>
         (x -> reset_weight(x, GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.informed)) |>
         (x -> x.mean)
