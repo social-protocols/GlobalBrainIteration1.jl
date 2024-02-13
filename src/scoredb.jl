@@ -1,9 +1,13 @@
-function get_score_db()::SQLite.DB
-    vote_database_filename = get(ENV, "VOTE_DATABASE_PATH", nothing)
-    if vote_database_filename === nothing
-        error("Environment variable 'VOTE_DATABASE_PATH' is not set.")
+function get_score_db(path::String)::SQLite.DB
+    # vote_database_filename = get(ENV, "VOTE_DATABASE_PATH", nothing)
+    # if vote_database_filename === nothing
+    #     error("Environment variable 'VOTE_DATABASE_PATH' is not set.")
+    # end
+    if !ispath(path)
+        error("Database file does not exist: $path")
     end
-    db = SQLite.DB(vote_database_filename)
+
+    db = SQLite.DB(path)
 
     # During development, just drop and create this db each time.
     DBInterface.execute(db, "drop table if exists scoreData")
