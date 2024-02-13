@@ -3,7 +3,6 @@ function get_score_db()::SQLite.DB
     if vote_database_filename === nothing
         error("Environment variable 'VOTE_DATABASE_PATH' is not set.")
     end
-
     db = SQLite.DB(vote_database_filename)
 
     # During development, just drop and create this db each time.
@@ -48,29 +47,29 @@ end
 
 function get_detailed_tallies(
     db::SQLite.DB,
-    tagId::Union{Int,Nothing},
-    postId::Union{Int,Nothing},
+    tag_id::Union{Int,Nothing},
+    post_id::Union{Int,Nothing},
 )
     sql_query = """
         select 
             tagId
             , postId as parentId
             , noteId as postId
-            , ifnull(currentCount,0) as parentCount
-            , ifnull(currentTotal,0) as parentTotal
-            , ifnull(uninformedCount,0) uninformedCount
-            , ifnull(uninformedTotal,0) uninformedTotal
-            , ifnull(informedCount,0) informedCount
-            , ifnull(informedTotal,0) informedTotal
-            , ifnull(noteCount,0) as selfCount
-            , ifnull(noteTotal,0) as selfTotal
+            , ifnull(currentCount, 0) as parentCount
+            , ifnull(currentTotal, 0) as parentTotal
+            , ifnull(uninformedCount, 0) uninformedCount
+            , ifnull(uninformedTotal, 0) uninformedTotal
+            , ifnull(informedCount, 0) informedCount
+            , ifnull(informedTotal, 0) informedTotal
+            , ifnull(noteCount, 0) as selfCount
+            , ifnull(noteTotal, 0) as selfTotal
         from DetailedTally
         where 
             ifnull(tagId = ?,true)
             and postId = ?
     """
 
-    if postId === nothing
+    if post_id === nothing
         sql_query = """
             select 
                 tagId
@@ -95,7 +94,7 @@ function get_detailed_tallies(
 
     # Bind the value to the placeholder
     # Execute the query and get an iterator over the results
-    results = DBInterface.execute(db, sql_query, [tagId, postId])
+    results = DBInterface.execute(db, sql_query, [tag_id, post_id])
 
     return (SQLTalliesTree(to_detailed_tally(row), db) for row in results)
 end
