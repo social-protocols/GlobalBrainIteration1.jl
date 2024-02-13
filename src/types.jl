@@ -239,10 +239,29 @@ end
 
 abstract type TalliesTree end
 
+function children(t::TalliesTree) end
+
 struct SQLTalliesTree <: TalliesTree
     tally::DetailedTally
     db::SQLite.DB
 end
+
+
+struct MemoryTalliesTree <: TalliesTree
+  tally::DetailedTally
+  children::Vector{TalliesTree}
+end
+
+
+function children(t::MemoryTalliesTree) 
+	return t.children
+end
+
+
+function tally(t::MemoryTalliesTree)
+	return t.tally
+end
+
 
 function children(t::SQLTalliesTree)
     return get_detailed_tallies(t.db, t.tally.tag_id, t.tally.post_id)

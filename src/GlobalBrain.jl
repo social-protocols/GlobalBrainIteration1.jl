@@ -80,5 +80,7 @@ export score_posts
 
 export TalliesTree
 export ScoreData
+export SQLTalliesTree
+export MemoryTalliesTree
 
 end
