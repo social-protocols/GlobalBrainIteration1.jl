@@ -90,18 +90,16 @@ Calculate (supported) scores for all post/note combinations in a thread.
 """
 function score_posts(
     tallies::TalliesTree,
-    output_results::Union{Function, Nothing} = nothing,
+    output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
 
     function score_post(t::TalliesTree)::Vector{ScoreData}
         subnote_score_data = score_posts(children(t), output_results)
 
         tally = tally(t)
-        this_note_effect =
-            (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
-        upvote_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-            (x -> update(x, tally.self)) |>
-            (x -> x.mean)
+        this_note_effect = (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
+        upvote_probability =
+            GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.self)) |> (x -> x.mean)
 
         # Find the top subnote
         # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
@@ -120,8 +118,7 @@ function score_posts(
             isnothing(this_note_effect) ? nothing :
             begin
                 informed_probability_supported =
-                    isnothing(top_subnote_effect) ?
-                    this_note_effect.informed_probability :
+                    isnothing(top_subnote_effect) ? this_note_effect.informed_probability :
                     begin
                         support = calc_note_support(top_subnote_effect)
                         this_note_effect.informed_probability * support +

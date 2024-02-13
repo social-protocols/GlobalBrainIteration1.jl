@@ -312,8 +312,8 @@ end
 A data structure to represent a tree of tallies stored in memory.
 """
 struct MemoryTalliesTree <: TalliesTree
-  tally::DetailedTally
-  children::Vector{TalliesTree}
+    tally::DetailedTally
+    children::Vector{TalliesTree}
 end
 
 
@@ -322,8 +322,8 @@ end
 
 Get the children of a `MemoryTalliesTree`.
 """
-function children(t::MemoryTalliesTree) 
-	return t.children
+function children(t::MemoryTalliesTree)
+    return t.children
 end
 
 
@@ -333,7 +333,7 @@ end
 Get the tally of a `MemoryTalliesTree`.
 """
 function tally(t::MemoryTalliesTree)
-	return t.tally
+    return t.tally
 end
 
 
