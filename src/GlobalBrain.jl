@@ -12,19 +12,17 @@ include("scoredb.jl")
 include("probabilities.jl")
 include("algorithm.jl")
 
+# --- Exported types
+# ------------------
 
-# --- Exports from probabilities.jl
-# ---------------------------------
+export Post
+export Vote
 
 export Model
 export BetaBernoulli
 export GammaPoisson
 export Tally
 export DetailedTally
-export Model
-export BetaBernoulli
-export GammaPoisson
-export Tally
 export BernoulliTally
 export PoissonTally
 export Distribution
@@ -32,6 +30,18 @@ export BetaDistribution
 export GammaDistribution
 export alpha
 export beta
+
+export NoteEffect
+export ScoreData
+
+export TalliesTree
+export SQLTalliesTree
+export MemoryTalliesTree
+
+
+# --- Exports from probabilities.jl
+# ---------------------------------
+
 export update
 export bayesian_avg
 export reset_weight
@@ -69,18 +79,9 @@ export get_detailed_tallies
 export insert_score_data
 
 
-# --- Further exports
-# -------------------
+# --- Exports from algorithm.jl
+# -----------------------------
 
-export Post
-export Vote
-
-export NoteEffect
 export score_posts
-
-export TalliesTree
-export ScoreData
-export SQLTalliesTree
-export MemoryTalliesTree
 
 end
