@@ -6,3 +6,6 @@ sync:
 dev:
   julia --eval "using Pkg; Pkg.develop(path=pwd())"
 
+db:
+  sqlite3 $VOTE_DATABASE_PATH
+

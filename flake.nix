@@ -23,6 +23,7 @@
               git
               less
               julia-bin
+              sqlite
             ];
           };
         };
