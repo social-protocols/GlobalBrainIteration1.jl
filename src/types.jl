@@ -220,6 +220,12 @@ Base.@kwdef struct NoteEffect
 end
 
 
+# TODO: improve documentation
+"""
+    ScoreData
+
+The data used to calculate the score of a post.
+"""
 Base.@kwdef struct ScoreData
     tag_id::Int64
     parent_id::Union{Int64,Nothing}
@@ -253,6 +259,7 @@ See also [`TalliesTree`](@ref).
 function children(t::TalliesTree)
     error("The children method is not implemented for type $(typeof(t))")
 end
+
 
 """
     tally(t::TalliesTree)::DetailedTally
