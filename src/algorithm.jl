@@ -32,14 +32,14 @@ function calc_note_effect(tally::DetailedTally)::NoteEffect
 
     uninformed_probability =
         overall_probability |>
-        (x -> reset_weight(x, GLOBAL_PRIOR_UNINFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
+        (x -> reset_weight(x, GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.uninformed)) |>
         (x -> x.mean)
 
     informed_probability =
         GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-        (x -> update(x, tally.overall_probability)) |>
-        (x -> reset_weight(x, GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
+        (x -> update(x, tally.self)) |>
+        (x -> reset_weight(x, GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.informed)) |>
         (x -> x.mean)
 
@@ -69,13 +69,12 @@ was shown and not shown respectively.
     note was not shown.
 """
 function calc_note_support(e::NoteEffect)::Float64
-    # TODO: this assert doesn't make sense conceptually -> handle p = 0 cases
-    @assert(
-        e.informed_probability > 0 && e.uninformed_probability > 0,
-        "upvote probabilities must be positive"
-    )
+    if e.informed_probability == e.uninformed_probability == 0.0
+        return 0.0
+    end
     return e.informed_probability / (e.informed_probability + e.uninformed_probability)
 end
+
 
 """
     score_posts(tallies, output_results)::Vector{NoteEffect}
@@ -84,21 +83,25 @@ Calculate (supported) scores for all post/note combinations in a thread.
 
 # Parameters
 
-    * `tallies`: An interatable sequence of TallyTrees
-    * `output_results`: A function to call to output each ScoreData result
+    * `tallies`: An iteratable sequence of `TallyTree`s.
+    * `output_results`: An optional function with a side effect. For example,
+    it can be used to print each `ScoreData` result or store each result to a
+    SQLite database.
 """
-function score_posts(tallies, output_results)::Vector{ScoreData}
+function score_posts(
+    tallies::TalliesTree,
+    output_results::Union{Function, Nothing} = nothing,
+)::Vector{ScoreData}
 
-    function score_post(t::TalliesTree)
-
-        tally = t.tally
-
+    function score_post(t::TalliesTree)::Vector{ScoreData}
         subnote_score_data = score_posts(children(t), output_results)
 
-        this_note_effect = (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
-
-        upvote_probability =
-            GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.self)) |> (x -> x.mean)
+        tally = tally(t)
+        this_note_effect =
+            (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
+        upvote_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+            (x -> update(x, tally.self)) |>
+            (x -> x.mean)
 
         # Find the top subnote
         # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
@@ -117,7 +120,8 @@ function score_posts(tallies, output_results)::Vector{ScoreData}
             isnothing(this_note_effect) ? nothing :
             begin
                 informed_probability_supported =
-                    isnothing(top_subnote_effect) ? this_note_effect.informed_probability :
+                    isnothing(top_subnote_effect) ?
+                    this_note_effect.informed_probability :
                     begin
                         support = calc_note_support(top_subnote_effect)
                         this_note_effect.informed_probability * support +
@@ -135,16 +139,18 @@ function score_posts(tallies, output_results)::Vector{ScoreData}
             end
 
         this_score_data = ScoreData(
-            tally.tag_id,
-            tally.parent_id,
-            tally.post_id,
-            this_note_effect_supported,
-            upvote_probability,
-            tally.self,
-            top_subnote_effect,
+            tag_id = tally.tag_id,
+            parent_id = tally.parent_id,
+            post_id = tally.post_id,
+            effect = this_note_effect_supported,
+            self_probability = upvote_probability,
+            self_tally = tally.self,
+            top_note_effect = top_subnote_effect,
         )
 
-        output_results([this_score_data])
+        if !isnothing(output_results)
+            output_results([this_score_data])
+        end
 
         return [this_score_data]
 
