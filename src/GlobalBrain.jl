@@ -1,10 +1,17 @@
 module GlobalBrain
 
+import DBInterface
+import Distributions
+import SQLite
+import Random
+
 include("types.jl")
-include("binary-entropy.jl")
-include("probabilities.jl")
 include("constants.jl")
+include("binary-entropy.jl")
+include("scoredb.jl")
+include("probabilities.jl")
 include("algorithm.jl")
+
 
 # --- Exports from probabilities.jl
 # ---------------------------------
@@ -32,7 +39,10 @@ export sample
 export +
 export -
 
+
 # --- Exports from constants.jl
+# -----------------------------
+
 export GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE
 export GLOBAL_PRIOR_UPVOTE_PROBABILITY
 export GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE
@@ -49,6 +59,16 @@ export cross_entropy
 export relative_entropy
 export information_gain
 
+
+# --- Exports from scoredb.jl
+# ---------------------------
+
+export get_score_db
+export to_detailed_tally
+export get_detailed_tallies
+export insert_score_data
+
+
 # --- Further exports
 # -------------------
 
@@ -57,7 +77,5 @@ export Vote
 
 export NoteEffect
 export score_posts
-export find_top_reply
-
 
 end

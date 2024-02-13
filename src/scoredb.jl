@@ -1,19 +1,13 @@
-using SQLite
-
-
 function get_score_db()::SQLite.DB
     vote_database_filename = get(ENV, "VOTE_DATABASE_PATH", nothing)
-
-    # Check if the environment variable is not set and error out
     if vote_database_filename === nothing
         error("Environment variable 'VOTE_DATABASE_PATH' is not set.")
     end
 
-    # Connect to the SQLite database
     db = SQLite.DB(vote_database_filename)
 
     # During development, just drop and create this db each time.
-    DBInterface.execute(db, "drop table if exists scoreData;")
+    DBInterface.execute(db, "drop table if exists scoreData")
     DBInterface.execute(db, """
         create table ScoreData(
             tagId int
@@ -28,7 +22,7 @@ function get_score_db()::SQLite.DB
             , total integer
             , selfP real not null
             , snapshotTimestamp integer not null
-        ) strict;
+        ) strict
         """
     );
 
@@ -62,32 +56,7 @@ function to_detailed_tally(result)::DetailedTally
     )
 end
 
-struct SQLTalliesTree <: TalliesTree
-  tally::DetailedTally
-  db::SQLite.DB
-end
-
-
-# Implement `children` and `tally` to make DetailedTally implement the (theoretical) TalliesTree interface
-
-function tally(t::SQLTalliesTree)
-    # println("Getting tally")
-    return t.tally
-end
-
-
-# Implement `children` and `tally` to make DetailedTally implement the (theoretical) TalliesTree interface
-function children(t::SQLTalliesTree)
-    # println("Getting children from DB")
-    return getDetailedTallies(t.db, t.tally.tag_id, t.tally.post_id)
-end
-
-function tally(T::DetailedTally)
-    return t.tally
-end
-
-function getDetailedTallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId::Union{Int, Nothing})
-    # Define your SQL query
+function get_detailed_tallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId::Union{Int, Nothing})
     sql_query = """
         select 
             tagId
@@ -130,7 +99,6 @@ function getDetailedTallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId::U
         """
     end
 
-
     # Bind the value to the placeholder
     # Execute the query and get an iterator over the results
     results = DBInterface.execute(db,sql_query, [tagId, postId])
@@ -138,10 +106,7 @@ function getDetailedTallies(db::SQLite.DB, tagId::Union{Int, Nothing}, postId::U
     return ( SQLTalliesTree(to_detailed_tally(row), db) for row in results) 
 end
 
-
-
 function insert_score_data(db::SQLite.DB, score_data::ScoreData, snapshot_timestamp::Int64)
-    # Define your SQL query
     sql_query = """
         insert into ScoreData(tagId, parentId, postId, topNoteId, parentUninformedP, parentInformedP, uninformedP, informedP, count, total, selfP, snapshotTimestamp) values (?,?,?,?,?,?,?,?,?,?,?,?)
     """
@@ -165,6 +130,4 @@ function insert_score_data(db::SQLite.DB, score_data::ScoreData, snapshot_timest
 
     println("Results", results)
 end
-
-# close(db)
 

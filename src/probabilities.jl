@@ -1,120 +1,3 @@
-import Random
-import Distributions
-
-"""
-  Model
-
-Abstract type for a probabilistic model.
-"""
-abstract type Model end
-
-"""
-  BetaBernoulli <: Model
-
-Abstract type for a Beta-Bernoulli model.
-
-See also [`Model`](@ref).
-"""
-abstract type BetaBernoulli <: Model end
-
-"""
-  GammaPoisson <: Model
-
-Abstract type for a Gamma-Poisson model.
-
-See also [`Model`](@ref).
-"""
-abstract type GammaPoisson <: Model end
-
-"""
-  Tally{T <: Model}
-
-A tally for a given model. We count "successes" in trials, thus sample_size
-must be greater or equal to count.
-
-# Fields
-
-  * `count::Int`: The number of positive outcomes in the sample.
-  * `sample_size::Int`: The total number of outcomes in the sample.
-
-See also [`Model`](@ref).
-"""
-struct Tally{T <: Model}
-  count::Int
-  sample_size::Int
-  function Tally{T}(count::Int, sample_size::Int) where T
-    @assert(count >= 0, "count cannot be smaller than 0")
-    @assert(sample_size >= count, "sample_size cannot be smaller than count")
-    new{T}(count, sample_size)
-  end
-end
-
-"""
-  Distribution{T <: Model}
-
-A distribution for a given model, parameterized by mean and weight.
-
-See also [`Model`](@ref).
-"""
-struct Distribution{T <: Model}
-  mean::Float64
-  weight::Float64
-end
-
-"""
-  BernoulliTally
-
-Short-hand for `Tally{BetaBernoulli}`.
-
-See also [`Tally`](@ref), [`Model`](@ref).
-"""
-const BernoulliTally = Tally{BetaBernoulli}
-
-"""
-  BetaDistribution
-
-Short-hand for `Distribution{BetaBernoulli}`.
-
-See also [`Distribution`](@ref), [`Model`](@ref).
-"""
-const BetaDistribution = Distribution{BetaBernoulli}
-
-"""
-  alpha(dist::BetaDistribution)::Float64
-
-Get the alpha parameter of a Beta distribution.
-
-See also [`BetaDistribution`](@ref), [`beta`](@ref).
-"""
-alpha(dist::BetaDistribution)::Float64 = dist.mean * dist.weight
-
-"""
-  beta(dist::BetaDistribution)::Float64
-
-Get the beta parameter of a Beta distribution.
-
-See also [`BetaDistribution`](@ref), [`alpha`](@ref).
-"""
-beta(dist::BetaDistribution)::Float64 = (1 - dist.mean) * dist.weight
-
-"""
-  PoissonTally
-
-Short-hand for `Tally{GammaPoisson}`.
-
-See also [`Tally`](@ref), [`Model`](@ref).
-"""
-const PoissonTally = Tally{GammaPoisson}
-
-"""
-  GammaDistribution
-
-Short-hand for `Distribution{GammaPoisson}`.
-
-See also [`Distribution`](@ref), [`Model`](@ref).
-"""
-const GammaDistribution = Distribution{GammaPoisson}
-
 """
   update(prior::BetaDistribution, new_data::BernoulliTally)::BetaDistribution
 
@@ -133,6 +16,7 @@ function update(prior::BetaDistribution, new_data::BernoulliTally)::BetaDistribu
     prior.weight + new_data.sample_size
   )
 end
+
 
 """
   update(prior::GammaDistribution, new_data::PoissonTally)::GammaDistribution
@@ -153,6 +37,7 @@ function update(prior::GammaDistribution, new_data::PoissonTally)::GammaDistribu
   )
 end
 
+
 """
   bayesian_avg(prior::Distribution, new_data::Tally)::Float64
 
@@ -171,6 +56,7 @@ function bayesian_avg(prior::Distribution, new_data::Tally)::Float64
         / (prior.weight + new_data.sample_size)
     )
 end
+
 
 """
   reset_weight(dist::Distribution, new_weight::Float64)::Distribution
@@ -197,6 +83,7 @@ function reset_weight(dist::Distribution, new_weight::Float64)
   return T(dist.mean, new_weight)
 end
 
+
 """
   sample(dist::BetaDistribution)::Float64
 
@@ -208,6 +95,7 @@ function sample(dist::BetaDistribution)::Float64
   formal_dist = Distributions.Beta(alpha(dist), beta(dist))
   return Random.rand(formal_dist)
 end
+
 
 """
   sample(dist::GammaDistribution)::Float64
@@ -221,11 +109,13 @@ function sample(dist::GammaDistribution)::Float64
   return Random.rand(formal_dist)
 end
 
+
 function Base.:+(a::Tally, b::Tally)
   T = typeof(a)
   @assert(T == typeof(b), "Tallies must be of the same type")
   return T(a.count + b.count, a.sample_size + b.sample_size)
 end
+
 
 function Base.:-(a::Tally, b::Tally)
   T = typeof(a)
@@ -233,14 +123,15 @@ function Base.:-(a::Tally, b::Tally)
   return T(a.count - b.count, a.sample_size - b.sample_size)
 end
 
+
 function Base.:+(a::Tally, b::Tuple{Int, Int})
   T = typeof(a)
   return T(a.count + b[1], a.sample_size + b[2])
 end
 
+
 function Base.:-(a::Tally, b::Tuple{Int, Int})
   T = typeof(a)
   return T(a.count - b[1], a.sample_size - b[2])
 end
-
 

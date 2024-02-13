@@ -6,6 +6,7 @@ export cross_entropy
 export relative_entropy
 export information_gain
 
+
 """
   surprisal(p::Float64, unit::Int = 2)::Float64
 
@@ -21,6 +22,7 @@ function surprisal(p::Float64, unit::Int = 2)::Float64
   @assert(1 >= p > 0, "p must be in (0, 1]")
   return log(unit, 1 / p)
 end
+
 
 """
   entropy(p::Float64)::Float64
@@ -39,6 +41,7 @@ function entropy(p::Float64)::Float64
       : p * surprisal(p, 2) + (1 - p) * surprisal(1 - p, 2)
   )
 end
+
 
 """
   cross_entropy(p::Float64, q::Float64)::Float64
@@ -59,6 +62,7 @@ function cross_entropy(p::Float64, q::Float64)::Float64
   )
 end
 
+
 """
   relative_entropy(p::Float64, q::Float64)::Float64
 
@@ -73,6 +77,7 @@ q.
 function relative_entropy(p::Float64, q::Float64)::Float64
 	return cross_entropy(p, q) - entropy(p)
 end
+
 
 """
   information_gain(p::Float64, q0::Float64, q1::Float64)::Float64

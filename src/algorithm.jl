@@ -1,63 +1,3 @@
-
-"""
-  DetailedTally
-
-All tallies for a post
-
-# Fields
-
-  * `tag_id::Int64`: The tag id.
-  * `parent_id::Union{Int64, Nothing}`: The unique identifier of the parent of this post if any.
-  * `post_id::Int64`: The unique identifier of this post.
-  * `parent::BernoulliTally`: The current tally tally for the **parent of this post**
-  * `uninformed::BernoulliTally`: The tally for the **parent of this post** given user was not informed of this note.
-  * `informed::BernoulliTally`: The tally for the **parent of this post** given user was informed of this note.
-  * `self::BernoulliTally`: The current tally for this post.
-"""
-Base.@kwdef struct DetailedTally
-  tag_id::Int64
-  parent_id::Union{Int64,Nothing}
-  post_id::Int64
-  parent::BernoulliTally
-  uninformed::BernoulliTally
-  informed::BernoulliTally
-  self::BernoulliTally
-end
-
-"""
-  NoteEffect
-
-The effect of a note on a post, given by the upvote probabilities given the
-note was shown and not shown respectively.
-
-# Fields
-
-  * `post_id::Int64`: The unique identifier of the post.
-  * `note_id::Union{Int64, Nothing}`: The unique identifier of the note. If
-    `nothing`, then this is the root post.
-  * `uninformed_probability::Float64`: The probability of an upvote given the
-    note was not shown.
-  * `informed_probability::Float64`: The probability of an upvote given the note
-    was shown.
-"""
-Base.@kwdef struct NoteEffect
-  post_id::Int64
-  note_id::Union{Int64, Nothing}
-  uninformed_probability::Float64
-  informed_probability::Float64
-end
-
-Base.@kwdef struct ScoreData
-  tag_id::Int64
-  parent_id::Union{Int64, Nothing}
-  post_id::Int64
-  effect::Union{NoteEffect, Nothing}
-  self_probability::Float64
-  self_tally::BernoulliTally
-  top_note_effect::Union{NoteEffect, Nothing}
-end
-
-
 """
   magnitude(effect::Union{NoteEffect, Nothing})::Float64
 
@@ -104,6 +44,7 @@ function calc_note_effect(tally::DetailedTally)::NoteEffect
   )
 end
 
+
 """
   calc_note_support(
     informed_probability::Float64,
@@ -120,23 +61,14 @@ was shown and not shown respectively.
   * `uninformed_probability::Float64`: The probability of an upvote given the
     note was not shown.
 """
-function calc_note_support(
-  e::NoteEffect
-)::Float64
+function calc_note_support(e::NoteEffect)::Float64
   # TODO: this assert doesn't make sense conceptually -> handle p = 0 cases
-  @assert(e.informed_probability > 0 && e.uninformed_probability > 0, "upvote probabilities must be positive")
+  @assert(
+    e.informed_probability > 0 && e.uninformed_probability > 0,
+    "upvote probabilities must be positive"
+  )
   return e.informed_probability / (e.informed_probability + e.uninformed_probability)
 end
-
-
-abstract type TalliesTree end
-
-# There are no interface types in Julie, but if there were, we would define something like this
-# interface TalliesTree
-#     tally::DetailedTally
-#     children::TalliesTree[]
-# end
-
 
 """
   score_posts(
@@ -151,12 +83,7 @@ Calculate (supported) scores for all post/note combinations in a thread.
   * `tallies`: An interatable sequence of TallyTrees
   * `output_results`: A function to call to output each ScoreData result
 """
-
-function score_posts(
-  tallies
-  , output_results
-)::Vector{ScoreData}
-
+function score_posts(tallies, output_results)::Vector{ScoreData}
   return mapreduce(
     (t) -> begin
 
@@ -185,7 +112,6 @@ function score_posts(
 
       this_note_effect_supported = 
         isnothing(this_note_effect) ? nothing : begin
-          
           informed_probability_supported = 
             isnothing(top_subnote_effect) ? 
             this_note_effect.informed_probability : 
@@ -193,17 +119,13 @@ function score_posts(
               support = calc_note_support(top_subnote_effect)
               this_note_effect.informed_probability * support + this_note_effect.uninformed_probability * (1 - support)
             end
-          
           something(NoteEffect(
             this_note_effect.post_id, 
             this_note_effect.note_id,
             this_note_effect.uninformed_probability,
             informed_probability_supported,
           ), nothing)
-        
         end
-
-
 
       this_score_data = ScoreData(
         tally.tag_id,
@@ -224,7 +146,4 @@ function score_posts(
     init = []
   )
 end
-
-
-
 
