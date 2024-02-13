@@ -27,9 +27,7 @@ and the post.
 """
 function calc_note_effect(tally::DetailedTally)::NoteEffect
     overall_probability =
-        GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-        (x -> update(x, tally.parent)) |>
-        (x -> x.mean)
+        GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent)) |> (x -> x.mean)
 
 
     uninformed_probability =
@@ -91,75 +89,66 @@ Calculate (supported) scores for all post/note combinations in a thread.
 """
 function score_posts(tallies, output_results)::Vector{ScoreData}
 
-   function score_post(t::TalliesTree)
+    function score_post(t::TalliesTree)
 
-    tally = t.tally
+        tally = t.tally
 
-    subnote_score_data = score_posts(children(t), output_results)
+        subnote_score_data = score_posts(children(t), output_results)
 
-    this_note_effect =
-        (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
+        this_note_effect = (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
 
-    upvote_probability =
-        GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-        (x -> update(x, tally.self)) |>
-        (x -> x.mean)
+        upvote_probability =
+            GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.self)) |> (x -> x.mean)
 
-    # Find the top subnote
-    # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
-    # amount of attention received? In general, we need to deal with multiple subnotes better
-    top_subnote_effect = reduce(
-        (a, b) -> begin
-            ma = (a === nothing) ? 0 : magnitude(a)
-            mb = (b === nothing) ? 0 : magnitude(b)
-            ma > mb ? a : b
-        end,
-        [x.effect for x in subnote_score_data if x.parent_id === tally.post_id];
-        init = nothing,
-    )
+        # Find the top subnote
+        # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
+        # amount of attention received? In general, we need to deal with multiple subnotes better
+        top_subnote_effect = reduce(
+            (a, b) -> begin
+                ma = (a === nothing) ? 0 : magnitude(a)
+                mb = (b === nothing) ? 0 : magnitude(b)
+                ma > mb ? a : b
+            end,
+            [x.effect for x in subnote_score_data if x.parent_id === tally.post_id];
+            init = nothing,
+        )
 
-    this_note_effect_supported =
-        isnothing(this_note_effect) ? nothing :
-        begin
-            informed_probability_supported =
-                isnothing(top_subnote_effect) ?
-                this_note_effect.informed_probability :
-                begin
-                    support = calc_note_support(top_subnote_effect)
-                    this_note_effect.informed_probability * support +
-                    this_note_effect.uninformed_probability * (1 - support)
-                end
-            something(
-                NoteEffect(
-                    this_note_effect.post_id,
-                    this_note_effect.note_id,
-                    this_note_effect.uninformed_probability,
-                    informed_probability_supported,
-                ),
-                nothing,
-            )
-        end
+        this_note_effect_supported =
+            isnothing(this_note_effect) ? nothing :
+            begin
+                informed_probability_supported =
+                    isnothing(top_subnote_effect) ? this_note_effect.informed_probability :
+                    begin
+                        support = calc_note_support(top_subnote_effect)
+                        this_note_effect.informed_probability * support +
+                        this_note_effect.uninformed_probability * (1 - support)
+                    end
+                something(
+                    NoteEffect(
+                        this_note_effect.post_id,
+                        this_note_effect.note_id,
+                        this_note_effect.uninformed_probability,
+                        informed_probability_supported,
+                    ),
+                    nothing,
+                )
+            end
 
-    this_score_data = ScoreData(
-        tally.tag_id,
-        tally.parent_id,
-        tally.post_id,
-        this_note_effect_supported,
-        upvote_probability,
-        tally.self,
-        top_subnote_effect,
-    )
+        this_score_data = ScoreData(
+            tally.tag_id,
+            tally.parent_id,
+            tally.post_id,
+            this_note_effect_supported,
+            upvote_probability,
+            tally.self,
+            top_subnote_effect,
+        )
 
-    output_results([this_score_data])
+        output_results([this_score_data])
 
-    return [this_score_data]
-  
-  end
+        return [this_score_data]
 
-  return mapreduce(
-      score_post,
-      vcat,
-      tallies;
-      init = [],
-  )
+    end
+
+    return mapreduce(score_post, vcat, tallies; init = [])
 end
