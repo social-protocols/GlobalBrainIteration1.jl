@@ -5,5 +5,5 @@ db:
   sqlite3 $VOTE_DATABASE_PATH
 
 format:
-  julia --eval "using JuliaFormatter; format(pwd())"
+  julia --eval "using JuliaFormatter; format(joinpath(pwd(), \"src\"))"
 
