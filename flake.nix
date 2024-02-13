@@ -24,6 +24,7 @@
               less
               julia-bin
               sqlite
+              vim
             ];
           };
         };
