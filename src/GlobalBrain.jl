@@ -73,6 +73,7 @@ export information_gain
 # --- Exports from scoredb.jl
 # ---------------------------
 
+export create_score_db
 export get_score_db
 export to_detailed_tally
 export get_detailed_tallies

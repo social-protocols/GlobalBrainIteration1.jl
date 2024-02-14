@@ -27,8 +27,8 @@ and the post.
 """
 function calc_note_effect(tally::DetailedTally)::NoteEffect
     overall_probability =
-        GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent)) |> (x -> x.mean)
-
+        GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent)) 
+        # |> (x -> x.mean)
 
     uninformed_probability =
         overall_probability |>
@@ -89,17 +89,17 @@ Calculate (supported) scores for all post/note combinations in a thread.
     SQLite database.
 """
 function score_posts(
-    tallies::TalliesTree,
+    tallies::Base.Generator,
     output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
 
     function score_post(t::TalliesTree)::Vector{ScoreData}
         subnote_score_data = score_posts(children(t), output_results)
 
-        tally = tally(t)
-        this_note_effect = (tally.parent_id === nothing) ? nothing : calc_note_effect(tally)
+        this_tally = tally(t)
+        this_note_effect = (this_tally.parent_id === nothing) ? nothing : calc_note_effect(this_tally)
         upvote_probability =
-            GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.self)) |> (x -> x.mean)
+            GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, this_tally.self)) |> (x -> x.mean)
 
         # Find the top subnote
         # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
@@ -110,7 +110,7 @@ function score_posts(
                 mb = (b === nothing) ? 0 : magnitude(b)
                 ma > mb ? a : b
             end,
-            [x.effect for x in subnote_score_data if x.parent_id === tally.post_id];
+            [x.effect for x in subnote_score_data if x.parent_id === this_tally.post_id];
             init = nothing,
         )
 
@@ -136,12 +136,12 @@ function score_posts(
             end
 
         this_score_data = ScoreData(
-            tag_id = tally.tag_id,
-            parent_id = tally.parent_id,
-            post_id = tally.post_id,
+            tag_id = this_tally.tag_id,
+            parent_id = this_tally.parent_id,
+            post_id = this_tally.post_id,
             effect = this_note_effect_supported,
             self_probability = upvote_probability,
-            self_tally = tally.self,
+            self_tally = this_tally.self,
             top_note_effect = top_subnote_effect,
         )
 

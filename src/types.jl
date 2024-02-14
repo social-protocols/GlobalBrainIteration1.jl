@@ -291,7 +291,7 @@ end
 Get the children of a `SQLTalliesTree`. As `SQLTalliesTree`s are stored in a
 SQLite database, this function will query the database for the children.
 """
-function children(t::SQLTalliesTree)::Vector{SQLTalliesTree}
+function children(t::SQLTalliesTree)::Base.Generator
     return get_detailed_tallies(t.db, t.tally.tag_id, t.tally.post_id)
 end
 
