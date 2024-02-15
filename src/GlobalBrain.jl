@@ -4,6 +4,7 @@ import DBInterface
 import Distributions
 import SQLite
 import Random
+import Dates
 
 include("types.jl")
 include("constants.jl")
@@ -73,7 +74,7 @@ export information_gain
 # --- Exports from scoredb.jl
 # ---------------------------
 
-export create_score_db
+export create_score_db_tables
 export get_score_db
 export to_detailed_tally
 export get_detailed_tallies
@@ -83,6 +84,7 @@ export insert_score_data
 # --- Exports from algorithm.jl
 # -----------------------------
 
-export score_posts
+export score_tree
+export get_score_data_db_writer
 
 end

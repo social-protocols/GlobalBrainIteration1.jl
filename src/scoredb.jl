@@ -1,19 +1,17 @@
-function create_score_db(path::String)::SQLite.DB
-    if ispath(path)
-        @info (
-            "Database already exists at this path." *
-            " Returning existing database."
-        )
-        return SQLite.DB(path)
-    end
+"""
+    create_score_db_tables(path::String)::Nothing
 
+Create a score database with the required schema. If a database already exists at the
+provided path, the tables will be created if they don't already exist.
+"""
+function create_score_db_tables(path::String)::Nothing
     try
         db = SQLite.DB(path)
         SQLite.transaction(db, "DEFERRED")
         DBInterface.execute(
             db,
             """
-                create table ScoreData(
+                create table if not exists ScoreData(
                     tagId               integer
                     , parentId          integer
                     , postId            integer not null
@@ -32,7 +30,7 @@ function create_score_db(path::String)::SQLite.DB
         DBInterface.execute(
             db,
             """
-                create table DetailedTally(
+                create table if not exists DetailedTally(
                     tagId int
                     , postId          integer not null
                     , noteId          integer not null
@@ -46,12 +44,12 @@ function create_score_db(path::String)::SQLite.DB
                     , noteCount       integer
                     , noteTotal       integer
                 ) strict
-            """
+            """,
         )
         DBInterface.execute(
             db,
             """
-                create table Tally(
+                create table if not exists Tally(
                     isRoot   integer not null
                     , tagId  integer not null
                     , postId integer not null
@@ -64,7 +62,7 @@ function create_score_db(path::String)::SQLite.DB
         DBInterface.execute(
             db,
             """
-                create table InformedTally(
+                create table if not exists InformedTally(
                     tagId       integer not null
                     , postId    integer not null
                     , noteId    integer not null
@@ -78,7 +76,7 @@ function create_score_db(path::String)::SQLite.DB
         DBInterface.execute(
             db,
             """
-                create table UninformedTally(
+                create table if not exists UninformedTally(
                     tagId       integer not null
                     , postId    integer not null
                     , noteId    integer not null
@@ -92,19 +90,18 @@ function create_score_db(path::String)::SQLite.DB
         SQLite.commit(db)
         @info "Schema created."
         @info "Database successfully created at $path"
-        return db
     catch
-        if ispath(path)
-            rm(path)
-        end
-        error(
-            "Error creating database." *
-            " Rolling back and deleting empty database."
-        )
+        error("Error creating tables. Rolling back.")
     end
 end
 
 
+"""
+    get_score_db(path::String)::SQLite.DB
+
+Get a connection to the score database at the provided path. If the database does not
+exist, an error will be thrown.
+"""
 function get_score_db(path::String)::SQLite.DB
     if !ispath(path)
         error("Database file does not exist: $path")
@@ -113,8 +110,12 @@ function get_score_db(path::String)::SQLite.DB
 end
 
 
-function to_detailed_tally(result)::DetailedTally
-    # parentId = missing(result[:parentId]) ? nothing : result[:parentId]
+"""
+    to_detailed_tally(result::SQLite.Row)::DetailedTally
+
+Convert a SQLite result row to a `DetailedTally`.
+"""
+function to_detailed_tally(result::SQLite.Row)::DetailedTally
     return DetailedTally(
         result[:tagId],
         result[:parentId] == 0 ? nothing : result[:parentId],
@@ -126,6 +127,19 @@ function to_detailed_tally(result)::DetailedTally
     )
 end
 
+
+"""
+    get_detailed_tallies(
+        db::SQLite.DB,
+        tag_id::Union{Int,Nothing},
+        post_id::Union{Int,Nothing},
+    )::Base.Generator
+
+Get the detailed tallies for a given tag and post. If `tag_id` is `nothing`, tallies for
+all tags will be returned. If `post_id` is `nothing`, tallies for all posts will be
+returned. If both `tag_id` and `post_id` are `nothing`, all tallies will be returned.
+The function returns a generator of `SQLTalliesTree`s.
+"""
 function get_detailed_tallies(
     db::SQLite.DB,
     tag_id::Union{Int,Nothing},
@@ -153,9 +167,10 @@ function get_detailed_tallies(
         sql_query = """
             select
                 tagId
-                , 0     as parentId 
-                    -- Julia returns null values as 'missing', which makes no
-                    -- sense. It should return 'nothing'. This is our workaround.
+                , 0     as parentId
+                        -- Julia returns null values as 'missing', which makes
+                        -- no sense. It should return 'nothing'. This is our
+                        -- workaround.
                 , postId
                 , 0     as parentCount
                 , 0     as parentTotal
@@ -177,6 +192,16 @@ function get_detailed_tallies(
     return (SQLTalliesTree(to_detailed_tally(row), db) for row in results)
 end
 
+
+"""
+    insert_score_data(
+        db::SQLite.DB,
+        score_data::ScoreData,
+        snapshot_timestamp::Int64,
+    )::Nothing
+
+Insert a `ScoreData` instance into the score database.
+"""
 function insert_score_data(db::SQLite.DB, score_data::ScoreData, snapshot_timestamp::Int64)
     sql_query = """
         insert into ScoreData(
@@ -195,34 +220,27 @@ function insert_score_data(db::SQLite.DB, score_data::ScoreData, snapshot_timest
         ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
 
-    results = DBInterface.execute(
+    DBInterface.execute(
         db,
         sql_query,
         [
             score_data.tag_id,
             score_data.parent_id,
             score_data.post_id,
-            score_data.top_note_effect !== nothing
-                ? score_data.top_note_effect.note_id
-                : nothing,
-            score_data.effect !== nothing
-                ? score_data.effect.uninformed_probability
-                : nothing,
-            score_data.effect !== nothing
-                ? score_data.effect.informed_probability
-                : nothing,
-            score_data.top_note_effect !== nothing
-                ? score_data.top_note_effect.uninformed_probability
-                : nothing,
-            score_data.top_note_effect !== nothing
-                ? score_data.top_note_effect.informed_probability
-                : nothing,
+            score_data.top_note_effect !== nothing ? score_data.top_note_effect.note_id :
+            nothing,
+            score_data.effect !== nothing ? score_data.effect.uninformed_probability :
+            nothing,
+            score_data.effect !== nothing ? score_data.effect.informed_probability :
+            nothing,
+            score_data.top_note_effect !== nothing ?
+            score_data.top_note_effect.uninformed_probability : nothing,
+            score_data.top_note_effect !== nothing ?
+            score_data.top_note_effect.informed_probability : nothing,
             score_data.self_tally.count,
             score_data.self_tally.sample_size,
             score_data.self_probability,
             snapshot_timestamp,
         ],
     )
-
-    println("Results", results)
 end

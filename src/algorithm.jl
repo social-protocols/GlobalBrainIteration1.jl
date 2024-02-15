@@ -26,9 +26,7 @@ and the post.
     * `tally::DetailedTally`: The informed tallies for the note and the post.
 """
 function calc_note_effect(tally::DetailedTally)::NoteEffect
-    overall_probability =
-        GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent)) 
-        # |> (x -> x.mean)
+    overall_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent))
 
     uninformed_probability =
         overall_probability |>
@@ -77,63 +75,71 @@ end
 
 
 """
-    score_posts(tallies, output_results)::Vector{NoteEffect}
+    score_tree(
+        tallies::Base.Generator,
+        output_results::Union{Function,Nothing} = nothing,
+    )::Vector{ScoreData}
 
-Calculate (supported) scores for all post/note combinations in a thread.
+Score a tree of tallies.
 
 # Parameters
 
-    * `tallies`: An iteratable sequence of `TallyTree`s.
-    * `output_results`: An optional function with a side effect. For example,
-    it can be used to print each `ScoreData` result or store each result to a
-    SQLite database.
+    * `tallies::Base.Generator`: A `Base.Generator` of `SQLTalliesTree`s.
+    * `output_results::Union{Function,Nothing}`: A function to output the results. If
+      `nothing`, no output is produced. This function can be used for side effects, such as
+      writing to a database.
 """
-function score_posts(
+function score_tree(
     tallies::Base.Generator,
     output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
 
-    function score_post(t::TalliesTree)::Vector{ScoreData}
-        subnote_score_data = score_posts(children(t), output_results)
+    function score_subtree(t::TalliesTree)::Vector{ScoreData}
+        subnote_score_data = score_tree(children(t), output_results)
 
         this_tally = tally(t)
-        this_note_effect = (this_tally.parent_id === nothing) ? nothing : calc_note_effect(this_tally)
+        this_note_effect =
+            isnothing(this_tally.parent_id) ? nothing : calc_note_effect(this_tally)
         upvote_probability =
-            GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, this_tally.self)) |> (x -> x.mean)
+            GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+            (x -> update(x, this_tally.self)) |>
+            (x -> x.mean)
 
         # Find the top subnote
-        # TODO: the top subnote will tend to be one that hasn't received a lot of replies that reduce its support. Perhaps weigh by 
-        # amount of attention received? In general, we need to deal with multiple subnotes better
+        # TODO: The top subnote will tend to be one that hasn't received a lot of replies
+        #       that reduce its support. Perhaps weigh by amount of attention received? In
+        #       general, we need to deal with multiple subnotes better.
         top_subnote_effect = reduce(
             (a, b) -> begin
-                ma = (a === nothing) ? 0 : magnitude(a)
-                mb = (b === nothing) ? 0 : magnitude(b)
+                ma = isnothing(a) ? 0 : magnitude(a)
+                mb = isnothing(b) ? 0 : magnitude(b)
+                # TODO: Do we need a tie-breaker here?
                 ma > mb ? a : b
             end,
-            [x.effect for x in subnote_score_data if x.parent_id === this_tally.post_id];
+            [x.effect for x in subnote_score_data if x.parent_id == this_tally.post_id];
             init = nothing,
         )
 
-        this_note_effect_supported =
-            isnothing(this_note_effect) ? nothing :
-            begin
-                informed_probability_supported =
-                    isnothing(top_subnote_effect) ? this_note_effect.informed_probability :
-                    begin
-                        support = calc_note_support(top_subnote_effect)
-                        this_note_effect.informed_probability * support +
-                        this_note_effect.uninformed_probability * (1 - support)
-                    end
-                something(
-                    NoteEffect(
-                        this_note_effect.post_id,
-                        this_note_effect.note_id,
-                        this_note_effect.uninformed_probability,
-                        informed_probability_supported,
-                    ),
-                    nothing,
-                )
+        this_note_effect_supported = if isnothing(this_note_effect)
+            nothing
+        else
+            informed_probability_supported = if isnothing(top_subnote_effect)
+                this_note_effect.informed_probability
+            else
+                supp = calc_note_support(top_subnote_effect)
+                this_note_effect.informed_probability * supp +
+                this_note_effect.uninformed_probability * (1 - supp)
             end
+            something(
+                NoteEffect(
+                    this_note_effect.post_id,
+                    this_note_effect.note_id,
+                    this_note_effect.uninformed_probability,
+                    informed_probability_supported,
+                ),
+                nothing,
+            )
+        end
 
         this_score_data = ScoreData(
             tag_id = this_tally.tag_id,
@@ -150,8 +156,23 @@ function score_posts(
         end
 
         return [this_score_data]
-
     end
 
-    return mapreduce(score_post, vcat, tallies; init = [])
+    return mapreduce(score_subtree, vcat, tallies; init = [])
+end
+
+
+"""
+    get_score_data_db_writer(db::SQLite.DB)::Function
+
+Get a function to write `ScoreData` to a database. This function can be used as the
+`output_results` parameter to [`score_tree`](@ref).
+"""
+function get_score_data_db_writer(db::SQLite.DB)::Function
+    return (score_data_vec::Vector{ScoreData}) -> begin
+        now = Dates.now() |> Dates.datetime2unix |> (x -> trunc(Int, x))
+        for score_data in score_data_vec
+            insert_score_data(db, score_data, now)
+        end
+    end
 end

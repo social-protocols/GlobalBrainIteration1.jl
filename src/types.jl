@@ -257,7 +257,7 @@ Default `children` method for `TalliesTree`. It throws an error since a
 See also [`TalliesTree`](@ref).
 """
 function children(t::TalliesTree)
-    error("The children method is not implemented for type $(typeof(t))")
+    @error "The children method is not implemented for type $(typeof(t))"
 end
 
 
@@ -270,7 +270,7 @@ Default `tally` method for `TalliesTree`. It throws an error since a
 See also [`TalliesTree`](@ref).
 """
 function tally(t::TalliesTree)
-    error("The tally method is not implemented for type $(typeof(t))")
+    @error "The tally method is not implemented for type $(typeof(t))"
 end
 
 
@@ -304,39 +304,3 @@ Get the tally of a `SQLTalliesTree`.
 function tally(t::SQLTalliesTree)::DetailedTally
     return t.tally
 end
-
-
-"""
-    MemoryTalliesTree <: TalliesTree
-
-A data structure to represent a tree of tallies stored in memory.
-"""
-struct MemoryTalliesTree <: TalliesTree
-    tally::DetailedTally
-    children::Vector{TalliesTree}
-end
-
-
-"""
-    children(t::MemoryTalliesTree)
-
-Get the children of a `MemoryTalliesTree`.
-"""
-function children(t::MemoryTalliesTree)
-    return t.children
-end
-
-
-"""
-    tally(t::MemoryTalliesTree)
-
-Get the tally of a `MemoryTalliesTree`.
-"""
-function tally(t::MemoryTalliesTree)
-    return t.tally
-end
-
-
-# function tally(t::DetailedTally)
-#     return t.self
-# end
