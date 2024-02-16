@@ -11,8 +11,8 @@ and the post.
     * `tally::DetailedTally`: The informed tallies for the note and the post.
 """
 function calc_note_effect(tally::DetailedTally)::NoteEffect
-    # return calc_note_effect_bayesian_average(tally)
-    return calc_note_effect_hmc(hierarchical_model1)(tally)
+    return calc_note_effect_bayesian_average(tally)
+    # return calc_note_effect_hmc(hierarchical_model1)(tally)
     # return calc_note_effect_hmc(hierarchical_model2)(tally)
 end
 
