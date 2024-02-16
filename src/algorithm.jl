@@ -16,41 +16,6 @@ end
 
 
 """
-    calc_note_effect(tally::DetailedTally)::NoteEffect
-
-Calculate the effect of a note on a post from the informed tally for the note
-and the post.
-
-# Parameters
-
-    * `tally::DetailedTally`: The informed tallies for the note and the post.
-"""
-function calc_note_effect(tally::DetailedTally)::NoteEffect
-    overall_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent))
-
-    uninformed_probability =
-        overall_probability |>
-        (x -> reset_weight(x, GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
-        (x -> update(x, tally.uninformed)) |>
-        (x -> x.mean)
-
-    informed_probability =
-        GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-        (x -> update(x, tally.self)) |>
-        (x -> reset_weight(x, GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
-        (x -> update(x, tally.informed)) |>
-        (x -> x.mean)
-
-    return NoteEffect(
-        post_id = tally.parent_id,
-        note_id = tally.post_id,
-        uninformed_probability = uninformed_probability,
-        informed_probability = informed_probability,
-    )
-end
-
-
-"""
     calc_note_support(
         informed_probability::Float64,
         uninformed_probability::Float64
