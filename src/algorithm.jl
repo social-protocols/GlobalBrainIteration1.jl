@@ -55,7 +55,7 @@ Score a tree of tallies.
       writing to a database.
 """
 function score_tree(
-    tallies::Base.Generator,
+    tallies,
     output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
 

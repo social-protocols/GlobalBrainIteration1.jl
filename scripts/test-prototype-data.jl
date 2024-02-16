@@ -1,7 +1,4 @@
 using GlobalBrain
-# include("scripts/distributions.jl")
-
-# 
 
 # --- Discussion tree:
 # 1
@@ -11,18 +8,9 @@ using GlobalBrain
 # |-3
 #   |-6
 #     |-7
-posts = [
-  Post(1, nothing, 0),
-  Post(2, 1, 0),
-  Post(3, 1, 0),
-  Post(4, 2, 0),
-  Post(5, 2, 0),
-  Post(6, 3, 0),
-  Post(7, 6, 0),
-]
-
 
 const t = BernoulliTally
+
 
 test_trees = [ 
 	InMemoryTree(DetailedTally(707, nothing, 1, t(0, 0), t(0, 0), t(0, 0), t(20, 30)), [
@@ -46,10 +34,15 @@ function print_results(results::Vector{ScoreData})
 end
 
 # informed_tallies_generator = Base.Generator(identity, informed_tallies_vec)
-scores = score_posts(test_trees, print_results)
+scores = score_tree(test_trees, print_results)
 
-db = get_score_db()
+vote_database_filename = get(ENV, "VOTE_DATABASE_PATH", nothing)
+# Check if the environment variable is not set and error out
+if vote_database_filename === nothing
+    error("Environment variable 'VOTE_DATABASE_PATH' is not set.")
+end
 
+db = get_score_db(vote_database_filename)
 
 tallies = get_detailed_tallies(db, nothing, nothing)
 
@@ -64,7 +57,7 @@ end
 
 # Connect to the SQLite database
 
-scores = score_posts(tallies, write_to_db)
+scores = score_tree(tallies, write_to_db)
 
 close(db)
 

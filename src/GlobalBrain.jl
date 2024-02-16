@@ -84,4 +84,8 @@ export insert_score_data
 export score_tree
 export get_score_data_db_writer
 
+export update
+
+export InMemoryTree
+
 end

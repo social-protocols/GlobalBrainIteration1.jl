@@ -304,3 +304,19 @@ Get the tally of a `SQLTalliesTree`.
 function tally(t::SQLTalliesTree)::DetailedTally
     return t.tally
 end
+
+# function tally(t::DetailedTally)
+#     return t.self
+# end
+
+struct InMemoryTree <: TalliesTree
+  tally::DetailedTally
+  children::Vector{TalliesTree}
+end
+
+# Implement `children` and `tally` to make DetailedTally implement the (theoretical) TalliesTree interface
+
+function children(t::InMemoryTree) return t.children end
+
+function tally(t::InMemoryTree) return t.tally end
+
