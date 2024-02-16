@@ -23,7 +23,8 @@
               git
               less
               julia-bin
-              sqlite
+              sqlite-interactive
+              fzf 
               vim
             ];
           };
