@@ -1,4 +1,5 @@
 *.png
 /.direnv
+data/vote-data.db
 .env
 
