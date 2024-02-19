@@ -1,4 +1,4 @@
-using Turing
+# using Turing
 
 """
     calc_note_effect(tally::DetailedTally)::NoteEffect
@@ -48,83 +48,83 @@ function calc_note_effect_bayesian_average(tally::DetailedTally)
     )
 end
 
-# Use HMC simulation (NUTS sampling) to calculate the note effect using the given hierarchical model
-function calc_note_effect_hmc(model_function) 
+# # Use HMC simulation (NUTS sampling) to calculate the note effect using the given hierarchical model
+# function calc_note_effect_hmc(model_function) 
 
-    stream = IOBuffer(UInt8[])
-    logger = Logging.SimpleLogger(Logging.Error)
+#     stream = IOBuffer(UInt8[])
+#     logger = Logging.SimpleLogger(Logging.Error)
 
-    println("Doing MCMC Sampling")
-    return (tally::DetailedTally) -> begin
-        model = model_function(tally.uninformed, tally.informed)
+#     println("Doing MCMC Sampling")
+#     return (tally::DetailedTally) -> begin
+#         model = model_function(tally.uninformed, tally.informed)
 
-        # Sample without any output
-        chain = Logging.with_logger(logger) do
-           MCMCChains.sample(model, NUTS(), 1000; progress=false)
-        end
+#         # Sample without any output
+#         chain = Logging.with_logger(logger) do
+#            MCMCChains.sample(model, NUTS(), 1000; progress=false)
+#         end
 
-        uninformed_p = mean(chain[:q])
-        informed_p = mean(chain[:p])
+#         uninformed_p = mean(chain[:q])
+#         informed_p = mean(chain[:p])
 
-        return NoteEffect(
-            post_id = tally.parent_id,
-            note_id = tally.post_id,
-            uninformed_probability = uninformed_p,
-            informed_probability = informed_p,
-        )
-    end
-end
-
-
-
-# This model uses the mean of q as the mean of the prior for q. It does not incorporate the reversion parameter.
-@model function hierarchical_model1(uninformed_t::Tally, informed_t::Tally)
-    successes1, trials1 = unpack(uninformed_t)
-    successes2, trials2 = unpack(informed_t)
-
-    q ~ Beta(1, 1)
-    m = mean(q)
-    epsilon = 1e-4
-    p ~ Beta(max(m * C2, epsilon), max((1 - m) * C2, epsilon))
-
-    for i in 1:successes1
-        1 ~ Bernoulli(q)
-    end
-    for i in 1:(trials1 - successes1)
-        0 ~ Bernoulli(q)
-    end
-
-    for i in 1:successes2
-        1 ~ Bernoulli(p)
-    end
-    for i in 1:(trials2 - successes2)
-        0 ~ Bernoulli(p)
-    end
-end
+#         return NoteEffect(
+#             post_id = tally.parent_id,
+#             note_id = tally.post_id,
+#             uninformed_probability = uninformed_p,
+#             informed_probability = informed_p,
+#         )
+#     end
+# end
 
 
-# This model adds the reversion parameter, which assumes an a priori regression to the mean. 
-@model function hierarchical_model2(uninformed_t::Tally, informed_t::Tally)
-    successes1, trials1 = unpack(uninformed_t)
-    successes2, trials2 = unpack(informed_t)
 
-    q ~ Beta(1, 1)
-    m = mean(q)
-    r ~ Beta(1,1)
-    informedPrior = mean(q) - r*(mean(q) - mean(m)) 
-    p ~ Beta(informedPrior * C, (1 - informedPrior) * C)
+# # This model uses the mean of q as the mean of the prior for q. It does not incorporate the reversion parameter.
+# @model function hierarchical_model1(uninformed_t::Tally, informed_t::Tally)
+#     successes1, trials1 = unpack(uninformed_t)
+#     successes2, trials2 = unpack(informed_t)
 
-    for i in 1:successes1
-        1 ~ Bernoulli(q)
-    end
-    for i in 1:(trials1 - successes1)
-        0 ~ Bernoulli(q)
-    end
+#     q ~ Beta(1, 1)
+#     m = mean(q)
+#     epsilon = 1e-4
+#     p ~ Beta(max(m * C2, epsilon), max((1 - m) * C2, epsilon))
 
-    for i in 1:successes2
-        1 ~ Bernoulli(p)
-    end
-    for i in 1:(trials2 - successes2)
-        0 ~ Bernoulli(p)
-    end
-end
+#     for i in 1:successes1
+#         1 ~ Bernoulli(q)
+#     end
+#     for i in 1:(trials1 - successes1)
+#         0 ~ Bernoulli(q)
+#     end
+
+#     for i in 1:successes2
+#         1 ~ Bernoulli(p)
+#     end
+#     for i in 1:(trials2 - successes2)
+#         0 ~ Bernoulli(p)
+#     end
+# end
+
+
+# # This model adds the reversion parameter, which assumes an a priori regression to the mean. 
+# @model function hierarchical_model2(uninformed_t::Tally, informed_t::Tally)
+#     successes1, trials1 = unpack(uninformed_t)
+#     successes2, trials2 = unpack(informed_t)
+
+#     q ~ Beta(1, 1)
+#     m = mean(q)
+#     r ~ Beta(1,1)
+#     informedPrior = mean(q) - r*(mean(q) - mean(m)) 
+#     p ~ Beta(informedPrior * C, (1 - informedPrior) * C)
+
+#     for i in 1:successes1
+#         1 ~ Bernoulli(q)
+#     end
+#     for i in 1:(trials1 - successes1)
+#         0 ~ Bernoulli(q)
+#     end
+
+#     for i in 1:successes2
+#         1 ~ Bernoulli(p)
+#     end
+#     for i in 1:(trials2 - successes2)
+#         0 ~ Bernoulli(p)
+#     end
+# end
