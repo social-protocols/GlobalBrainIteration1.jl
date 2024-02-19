@@ -12,7 +12,6 @@ import Logging
 include("types.jl")
 include("constants.jl")
 include("binary-entropy.jl")
-include("scoredb.jl")
 include("probabilities.jl")
 include("algorithm.jl")
 include("note-effect.jl")
@@ -39,9 +38,7 @@ export NoteEffect
 export ScoreData
 
 export TalliesTree
-export SQLTalliesTree
-export MemoryTalliesTree
-
+export InMemoryTree
 
 # --- Exports from probabilities.jl
 # ---------------------------------
@@ -68,24 +65,12 @@ export relative_entropy
 export information_gain
 
 
-# --- Exports from scoredb.jl
-# ---------------------------
-
-export create_score_db_tables
-export get_score_db
-export to_detailed_tally
-export get_detailed_tallies
-export insert_score_data
-
-
 # --- Exports from algorithm.jl
 # -----------------------------
 
 export score_tree
-export get_score_data_db_writer
 
 export update
 
-export InMemoryTree
 
 end
