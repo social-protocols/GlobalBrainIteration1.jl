@@ -55,14 +55,19 @@ Score a tree of tallies.
       writing to a database.
 """
 function score_tree(
-    tallies,
+    tallies::Vector{TalliesTree},
     output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
-
     function score_subtree(t::TalliesTree)::Vector{ScoreData}
-        subnote_score_data = score_tree(children(t), output_results)
 
-        this_tally = tally(t)
+        if !t.needs_recalculation()
+            @info "Using existing score data for $(t.tally().post_id)"
+            return [t.score_data()]
+        end
+
+        subnote_score_data = score_tree(t.children(), output_results)
+
+        this_tally = t.tally()
         this_note_effect =
             isnothing(this_tally.parent_id) ? nothing : calc_note_effect(this_tally)
         upvote_probability =

@@ -236,87 +236,25 @@ Base.@kwdef struct ScoreData
     top_note_effect::Union{NoteEffect,Nothing}
 end
 
-
-"""
-    TalliesTree
-
-Abstract type for a tree of tallies. For any subtype of `TalliesTree`s, a
-`children` and a `tally` method must be implemented. If none are found, the
-default methods `children(t::TalliesTree)::Vector{TalliesTree}` and
-`tally(t::TalliesTree)::DetailedTally` will raise an error.
-"""
-abstract type TalliesTree end
-
-
-"""
-    children(t::TalliesTree)::Vector{TalliesTree}
-
-Default `children` method for `TalliesTree`. It throws an error since a
-`children` method should be implemented for any subtype of `TalliesTree`.
-
-See also [`TalliesTree`](@ref).
-"""
-function children(t::TalliesTree)
-    @error "The children method is not implemented for type $(typeof(t))"
+Base.@kwdef struct TalliesTree
+    children::Function
+    tally::Function
+    needs_recalculation::Function
+    score_data::Function
 end
 
 
-"""
-    tally(t::TalliesTree)::DetailedTally
-
-Default `tally` method for `TalliesTree`. It throws an error since a
-`tally` method should be implemented for any subtype of `TalliesTree`.
-
-See also [`TalliesTree`](@ref).
-"""
-function tally(t::TalliesTree)
-    @error "The tally method is not implemented for type $(typeof(t))"
-end
-
-
-"""
-    SQLTalliesTree <: TalliesTree
-
-A data structure to represent a tree of tallies stored in an SQLite database.
-"""
-struct SQLTalliesTree <: TalliesTree
-    tally::DetailedTally
-    db::SQLite.DB
-end
-
-
-"""
-    children(t::SQLTalliesTree)
-
-Get the children of a `SQLTalliesTree`. As `SQLTalliesTree`s are stored in a
-SQLite database, this function will query the database for the children.
-"""
-function children(t::SQLTalliesTree)::Base.Generator
-    return get_detailed_tallies(t.db, t.tally.tag_id, t.tally.post_id)
-end
-
-
-"""
-    tally(t::SQLTalliesTree)
-
-Get the tally of a `SQLTalliesTree`.
-"""
-function tally(t::SQLTalliesTree)::DetailedTally
-    return t.tally
-end
-
-# function tally(t::DetailedTally)
-#     return t.self
-# end
-
-struct InMemoryTree <: TalliesTree
+struct InMemoryTree
   tally::DetailedTally
-  children::Vector{TalliesTree}
+  children::Vector{InMemoryTree}
 end
 
-# Implement `children` and `tally` to make DetailedTally implement the (theoretical) TalliesTree interface
-
-function children(t::InMemoryTree) return t.children end
-
-function tally(t::InMemoryTree) return t.tally end
+function TalliesTree(t::InMemoryTree)
+    return TalliesTree(
+        () -> map((c) -> TalliesTree(c), t.children),
+        () -> t.tally,
+        () -> true,
+        () -> nothing,
+    )
+end
 
