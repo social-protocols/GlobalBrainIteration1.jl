@@ -59,7 +59,7 @@ export -
 using .BinaryEntropy
 
 export surprisal
-# export entropy
+export entropy
 export cross_entropy
 export relative_entropy
 export information_gain
