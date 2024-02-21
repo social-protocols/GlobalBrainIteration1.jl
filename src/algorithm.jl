@@ -130,18 +130,3 @@ function score_tree(
 
     return mapreduce(score_subtree, vcat, tallies; init = [])
 end
-
-
-"""
-    get_score_data_db_writer(db::SQLite.DB)::Function
-
-Get a function to write `ScoreData` to a database. This function can be used as the
-`output_results` parameter to [`score_tree`](@ref).
-"""
-function get_score_data_db_writer(db::SQLite.DB)::Function
-    return (score_data_vec::Vector{ScoreData}) -> begin
-        for score_data in score_data_vec
-            insert_score_data(db, score_data)
-        end
-    end
-end

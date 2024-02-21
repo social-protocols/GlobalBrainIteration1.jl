@@ -46,7 +46,7 @@ export InMemoryTree
 export update
 export bayesian_avg
 export reset_weight
-# export sample
+export sample
 export unpack
 export +
 export -
@@ -69,8 +69,5 @@ export information_gain
 # -----------------------------
 
 export score_tree
-
-export update
-
 
 end
