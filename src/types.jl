@@ -231,7 +231,6 @@ Base.@kwdef struct ScoreData
     parent_id::Union{Int64,Nothing}
     post_id::Int64
     effect::Union{NoteEffect,Nothing}
-    self_probability::Float64
     self_tally::BernoulliTally
     top_note_effect::Union{NoteEffect,Nothing}
 end
