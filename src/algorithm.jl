@@ -70,6 +70,10 @@ function score_tree(
         this_tally = t.tally()
         this_note_effect =
             isnothing(this_tally.parent_id) ? nothing : calc_note_effect(this_tally)
+        upvote_probability =
+            GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
+            (x -> update(x, this_tally.self)) |>
+            (x -> x.mean)
 
         # Find the top subnote
         # TODO: The top subnote will tend to be one that hasn't received a lot of replies
@@ -112,6 +116,7 @@ function score_tree(
             parent_id = this_tally.parent_id,
             post_id = this_tally.post_id,
             effect = this_note_effect_supported,
+            self_probability = upvote_probability,
             self_tally = this_tally.self,
             top_note_effect = top_subnote_effect,
         )
