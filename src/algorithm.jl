@@ -58,6 +58,9 @@ function score_tree(
     tallies::Vector{TalliesTree},
     output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
+    println("New version")
+
+
     function score_subtree(t::TalliesTree)::Vector{ScoreData}
 
         if !t.needs_recalculation()
