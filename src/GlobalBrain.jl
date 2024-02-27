@@ -14,6 +14,7 @@ include("constants.jl")
 include("binary-entropy.jl")
 include("probabilities.jl")
 include("algorithm.jl")
+include("score.jl")
 include("note-effect.jl")
 
 # --- Exported types
@@ -69,5 +70,15 @@ export information_gain
 # -----------------------------
 
 export score_tree
+
+# --- Exports from score.jl
+# -----------------------------
+
+export score
+export informed_probability
+export uninformed_probability
+export parent_informed_probability
+export parent_uninformed_probability
+export top_note_id
 
 end

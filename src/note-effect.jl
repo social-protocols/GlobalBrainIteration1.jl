@@ -1,4 +1,43 @@
-# using Turing
+"""
+    magnitude(effect::Union{NoteEffect, Nothing})::Float64
+
+Calculate the magnitude of a `NoteEffect`: the absolute difference between the
+upvote probabilities given the note was shown and not shown respectively. The
+effect of `Nothing` is 0.0 by definition.
+
+# Parameters
+
+    * `effect::Union{NoteEffect, Nothing}`: The effect to calculate the
+    magnitude of.
+"""
+function magnitude(effect::Union{NoteEffect,Nothing})::Float64
+    return abs(effect.uninformed_probability - effect.informed_probability)
+end
+
+
+"""
+    calc_note_support(
+        informed_probability::Float64,
+        uninformed_probability::Float64
+    )::Float64
+
+Calculate the support for a note given the upvote probabilities given the note
+was shown and not shown respectively.
+
+# Parameters
+
+    * `informed_probability::Float64`: The probability of an upvote given the
+    note was shown.
+    * `uninformed_probability::Float64`: The probability of an upvote given the
+    note was not shown.
+"""
+function calc_note_support(e::NoteEffect)::Float64
+    if e.informed_probability == e.uninformed_probability == 0.0
+        return 0.0
+    end
+    return e.informed_probability / (e.informed_probability + e.uninformed_probability)
+end
+
 
 """
     calc_note_effect(tally::DetailedTally)::NoteEffect
@@ -39,6 +78,8 @@ function calc_note_effect_bayesian_average(tally::DetailedTally)
         (x -> reset_weight(x, GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.informed)) |>
         (x -> x.mean)
+
+    # println("Calculated note effect given tally $tally: $overall_probability, $uninformed_probability, $informed_probability")
 
     return NoteEffect(
         post_id = tally.parent_id,

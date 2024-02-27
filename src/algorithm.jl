@@ -1,43 +1,3 @@
-"""
-    magnitude(effect::Union{NoteEffect, Nothing})::Float64
-
-Calculate the magnitude of a `NoteEffect`: the absolute difference between the
-upvote probabilities given the note was shown and not shown respectively. The
-effect of `Nothing` is 0.0 by definition.
-
-# Parameters
-
-    * `effect::Union{NoteEffect, Nothing}`: The effect to calculate the
-    magnitude of.
-"""
-function magnitude(effect::Union{NoteEffect,Nothing})::Float64
-    return abs(effect.uninformed_probability - effect.informed_probability)
-end
-
-
-"""
-    calc_note_support(
-        informed_probability::Float64,
-        uninformed_probability::Float64
-    )::Float64
-
-Calculate the support for a note given the upvote probabilities given the note
-was shown and not shown respectively.
-
-# Parameters
-
-    * `informed_probability::Float64`: The probability of an upvote given the
-    note was shown.
-    * `uninformed_probability::Float64`: The probability of an upvote given the
-    note was not shown.
-"""
-function calc_note_support(e::NoteEffect)::Float64
-    if e.informed_probability == e.uninformed_probability == 0.0
-        return 0.0
-    end
-    return e.informed_probability / (e.informed_probability + e.uninformed_probability)
-end
-
 
 """
     score_tree(
@@ -58,19 +18,23 @@ function score_tree(
     tallies::Vector{TalliesTree},
     output_results::Union{Function,Nothing} = nothing,
 )::Vector{ScoreData}
-    println("New version")
-
-
     function score_subtree(t::TalliesTree)::Vector{ScoreData}
 
+
+        this_tally = t.tally()
+
         if !t.needs_recalculation()
-            @info "Using existing score data for $(t.tally().post_id)"
+            # @info "Using existing score data for $(this_tally.post_id)"
             return [t.score_data()]
+        else 
+            # @info "Calculating score for $(this_tally.post_id)"
         end
 
         subnote_score_data = score_tree(t.children(), output_results)
 
-        this_tally = t.tally()
+            # println("Subnote score data for $(this_tally.post_id): $subnote_score_data")
+
+
         this_note_effect =
             isnothing(this_tally.parent_id) ? nothing : calc_note_effect(this_tally)
         upvote_probability =
@@ -128,8 +92,10 @@ function score_tree(
             output_results([this_score_data])
         end
 
+        # println("Returning score data for $(this_tally.post_id): $this_score_data")
         return [this_score_data]
     end
 
     return mapreduce(score_subtree, vcat, tallies; init = [])
 end
+
