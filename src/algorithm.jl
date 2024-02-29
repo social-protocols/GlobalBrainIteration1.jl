@@ -39,7 +39,7 @@ function score_tree(
             isnothing(this_tally.parent_id) ? nothing : calc_note_effect(this_tally)
         upvote_probability =
             GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
-            (x -> update(x, this_tally.self)) |>
+            (x -> update(x, this_tally.overall)) |>
             (x -> x.mean)
 
         # Find the top subnote
@@ -69,10 +69,12 @@ function score_tree(
             end
             something(
                 NoteEffect(
-                    this_note_effect.post_id,
-                    this_note_effect.note_id,
-                    this_note_effect.uninformed_probability,
-                    informed_probability_supported,
+                    post_id = this_note_effect.post_id,
+                    note_id = this_note_effect.note_id,
+                    informed_probability = informed_probability_supported,
+                    uninformed_probability = this_note_effect.uninformed_probability,
+                    # informed_tally = this_tally.informed,
+                    # uninformed_tally = this_tally.uninformed,
                 ),
                 nothing,
             )
@@ -83,8 +85,8 @@ function score_tree(
             parent_id = this_tally.parent_id,
             post_id = this_tally.post_id,
             effect = this_note_effect_supported,
-            self_probability = upvote_probability,
-            self_tally = this_tally.self,
+            overall_probability = upvote_probability,
+            overall_tally = this_tally.overall,
             top_note_effect = top_subnote_effect,
         )
 

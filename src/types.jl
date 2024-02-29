@@ -183,16 +183,16 @@ All tallies for a post.
     given user was not informed of this note.
     * `informed::BernoulliTally`: The tally for the **parent of this post**
     given user was informed of this note.
-    * `self::BernoulliTally`: The current tally for this post.
+    * `overall::BernoulliTally`: The current tally for this post.
 """
 Base.@kwdef struct DetailedTally
     tag_id::Int64
     parent_id::Union{Int64,Nothing}
     post_id::Int64
     parent::BernoulliTally
-    uninformed::BernoulliTally
     informed::BernoulliTally
-    self::BernoulliTally
+    uninformed::BernoulliTally
+    overall::BernoulliTally
 end
 
 
@@ -215,8 +215,10 @@ note was shown and not shown respectively.
 Base.@kwdef struct NoteEffect
     post_id::Int64
     note_id::Union{Int64,Nothing}
-    uninformed_probability::Float64
     informed_probability::Float64
+    uninformed_probability::Float64
+    # informed_tally::Tally
+    # uninformed_tally::Tally
 end
 
 
@@ -231,8 +233,8 @@ Base.@kwdef struct ScoreData
     parent_id::Union{Int64,Nothing}
     post_id::Int64
     effect::Union{NoteEffect,Nothing}
-    self_probability::Float64
-    self_tally::BernoulliTally
+    overall_probability::Float64
+    overall_tally::BernoulliTally
     top_note_effect::Union{NoteEffect,Nothing}
 end
 

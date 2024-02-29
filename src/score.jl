@@ -7,11 +7,11 @@ function score(score_data::ScoreData)::Float64
 end
 
 function informed_probability(score_data::ScoreData)::Float64 
-	return isnothing(score_data.top_note_effect) ? score_data.self_probability : score_data.top_note_effect.informed_probability
+	return isnothing(score_data.top_note_effect) ? score_data.overall_probability : score_data.top_note_effect.informed_probability
 end
 
 function uninformed_probability(score_data::ScoreData)::Float64 
-	return isnothing(score_data.top_note_effect) ? score_data.self_probability : score_data.top_note_effect.uninformed_probability
+	return isnothing(score_data.top_note_effect) ? score_data.overall_probability : score_data.top_note_effect.uninformed_probability
 end
 
 function parent_informed_probability(score_data::ScoreData)::Union{Float64,Nothing} 
@@ -24,4 +24,12 @@ end
 
 function top_note_id(score_data::ScoreData)::Union{Int64,Nothing} 
 	return !isnothing(score_data.top_note_effect) ? score_data.top_note_effect.note_id : nothing
+end
+
+function informed_tally(score_data::ScoreData)::Tally 
+	return isnothing(score_data.top_note_effect) ? score_data.overall_tally : score_data.top_note_effect.informed_tally
+end
+
+function uninformed_tally(score_data::ScoreData)::Tally 
+	return isnothing(score_data.top_note_effect) ? score_data.overall_tally : score_data.top_note_effect.uninformed_tally
 end

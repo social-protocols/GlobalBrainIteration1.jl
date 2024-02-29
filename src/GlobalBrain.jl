@@ -79,6 +79,10 @@ export informed_probability
 export uninformed_probability
 export parent_informed_probability
 export parent_uninformed_probability
+
+export informed_tally
+export uninformed_tally
+
 export top_note_id
 
 end
