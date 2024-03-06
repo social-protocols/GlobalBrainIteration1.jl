@@ -86,6 +86,9 @@ function calc_note_effect_bayesian_average(tally::DetailedTally)
         note_id = tally.post_id,
         informed_probability = informed_probability,
         uninformed_probability = uninformed_probability,
+        informed_sample_size = tally.informed.sample_size,
+        uninformed_sample_size = tally.uninformed.sample_size,
+        # sample_size = tally.overall.sample_size
         # informed_tally = tally.informed,
         # uninformed_tally = tally.uninformed,
     )

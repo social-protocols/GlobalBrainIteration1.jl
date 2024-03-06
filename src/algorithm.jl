@@ -73,8 +73,8 @@ function score_tree(
                     note_id = this_note_effect.note_id,
                     informed_probability = informed_probability_supported,
                     uninformed_probability = this_note_effect.uninformed_probability,
-                    # informed_tally = this_tally.informed,
-                    # uninformed_tally = this_tally.uninformed,
+                    informed_sample_size = this_note_effect.informed_sample_size,
+                    uninformed_sample_size = this_note_effect.uninformed_sample_size,
                 ),
                 nothing,
             )

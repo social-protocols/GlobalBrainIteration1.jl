@@ -217,6 +217,9 @@ Base.@kwdef struct NoteEffect
     note_id::Union{Int64,Nothing}
     informed_probability::Float64
     uninformed_probability::Float64
+    informed_sample_size::Int64
+    uninformed_sample_size::Int64
+    # sample_size::Int64
     # informed_tally::Tally
     # uninformed_tally::Tally
 end

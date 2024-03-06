@@ -33,3 +33,20 @@ end
 function uninformed_tally(score_data::ScoreData)::Tally 
 	return isnothing(score_data.top_note_effect) ? score_data.overall_tally : score_data.top_note_effect.uninformed_tally
 end
+
+function parent_p_sample_size(score_data::ScoreData)::Union{Int64,Nothing} 
+		return isnothing(score_data.effect) ? nothing : score_data.effect.informed_sample_size
+end
+
+function parent_q_sample_size(score_data::ScoreData)::Union{Int64,Nothing} 
+		return isnothing(score_data.effect) ? nothing : score_data.effect.uninformed_sample_size
+end
+
+function p_sample_size(score_data::ScoreData)::Int64 
+	return isnothing(score_data.top_note_effect) ? 0 : score_data.top_note_effect.informed_sample_size
+end
+
+function q_sample_size(score_data::ScoreData)::Int64 
+	return isnothing(score_data.top_note_effect) ? score_data.overall_tally.sample_size : score_data.top_note_effect.uninformed_sample_size
+end
+

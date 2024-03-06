@@ -80,6 +80,12 @@ export uninformed_probability
 export parent_informed_probability
 export parent_uninformed_probability
 
+
+export parent_p_sample_size
+export parent_q_sample_size
+export p_sample_size
+export q_sample_size
+
 export informed_tally
 export uninformed_tally
 
