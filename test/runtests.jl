@@ -1,6 +1,8 @@
 using GlobalBrain
 using Test
 
-include("binary-entropy.jl")
-include("probability-models.jl")
-
+for file in readdir("test")
+    if endswith(file, ".jl") && file != "runtests.jl"
+        include("$file")
+    end
+end
