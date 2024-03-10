@@ -13,7 +13,7 @@ See also [`BetaDistribution`](@ref), [`BernoulliTally`](@ref).
 function update(prior::BetaDistribution, new_data::BernoulliTally)::BetaDistribution
     return BetaDistribution(
         bayesian_avg(prior, new_data),
-        prior.weight + new_data.sample_size,
+        prior.weight + new_data.size,
     )
 end
 
@@ -33,7 +33,7 @@ See also [`GammaDistribution`](@ref), [`PoissonTally`](@ref).
 function update(prior::GammaDistribution, new_data::PoissonTally)::GammaDistribution
     return GammaDistribution(
         bayesian_avg(prior, new_data),
-        prior.weight + new_data.sample_size,
+        prior.weight + new_data.size,
     )
 end
 
@@ -53,7 +53,7 @@ See also [`Distribution`](@ref), [`Tally`](@ref).
 function bayesian_avg(prior::Distribution, new_data::Tally)::Float64
     return (
         (prior.mean * prior.weight + new_data.count) /
-        (prior.weight + new_data.sample_size)
+        (prior.weight + new_data.size)
     )
 end
 
@@ -113,30 +113,30 @@ end
 function Base.:+(a::Tally, b::Tally)
     T = typeof(a)
     @assert(T == typeof(b), "Tallies must be of the same type")
-    return T(a.count + b.count, a.sample_size + b.sample_size)
+    return T(a.count + b.count, a.size + b.size)
 end
 
 
 function Base.:-(a::Tally, b::Tally)
     T = typeof(a)
     @assert(T == typeof(b), "Tallies must be of the same type")
-    return T(a.count - b.count, a.sample_size - b.sample_size)
+    return T(a.count - b.count, a.size - b.size)
 end
 
 
 function Base.:+(a::Tally, b::Tuple{Int,Int})
     T = typeof(a)
-    return T(a.count + b[1], a.sample_size + b[2])
+    return T(a.count + b[1], a.size + b[2])
 end
 
 
 function Base.:-(a::Tally, b::Tuple{Int,Int})
     T = typeof(a)
-    return T(a.count - b[1], a.sample_size - b[2])
+    return T(a.count - b[1], a.size - b[2])
 end
 
 function unpack(t::Tally)
-  return (t.count, t.sample_size)
+  return (t.count, t.size)
 end
 
 

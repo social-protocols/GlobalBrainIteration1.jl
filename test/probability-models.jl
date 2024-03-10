@@ -34,12 +34,12 @@ end
     poisson_tally_increased_2 = poisson_tally + (1, 25)
 
     @test bernoulli_tally_increased_1.count == 14
-    @test bernoulli_tally_increased_1.sample_size == 22
+    @test bernoulli_tally_increased_1.size == 22
     @test bernoulli_tally_increased_2.count == 18
-    @test bernoulli_tally_increased_2.sample_size == 27
+    @test bernoulli_tally_increased_2.size == 27
 
     @test poisson_tally_increased_1.count == 17
-    @test poisson_tally_increased_1.sample_size == 24
+    @test poisson_tally_increased_1.size == 24
     @test poisson_tally_increased_2.count == 13
-    @test poisson_tally_increased_2.sample_size == 41
+    @test poisson_tally_increased_2.size == 41
 end

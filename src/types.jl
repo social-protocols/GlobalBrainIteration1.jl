@@ -6,8 +6,8 @@ root of the thread.
 
 # Fields
 
-    * `id::Int64`: The unique identifier of the post.
-    * `parent::Union{Int64, Nothing}`: The unique identifier of the parent post.
+    * `id::Int64`: The id of the post.
+    * `parent::Union{Int64, Nothing}`: The id of the parent post.
     * `timestamp::Int64`: The time at which the post was created.
 """
 Base.@kwdef struct Post
@@ -15,31 +15,6 @@ Base.@kwdef struct Post
     parent::Union{Int64,Nothing}
     timestamp::Int64
 end
-
-
-"""
-    Vote
-
-A vote on a post. If `note_id` is `nothing`, then this vote is on the post
-without a note being shown.
-
-# Fields
-
-    * `post_id::Int64`: The unique identifier of the post being voted on.
-    * `note_id::Union{Int64, Nothing}`: The unique identifier of the note shown
-    alongside the post, if any.
-    * `user_id::Int64`: The unique identifier of the user who cast the vote.
-    * `upvote::Bool`: Whether the vote is an upvote or a downvote.
-    * `timestamp::Int64`: The time at which the vote was cast.
-"""
-Base.@kwdef struct Vote
-    post_id::Int64
-    note_id::Union{Int64,Nothing}
-    user_id::Int64
-    upvote::Bool
-    timestamp::Int64
-end
-
 
 """
     Model
@@ -72,23 +47,23 @@ abstract type GammaPoisson <: Model end
 """
     Tally{T <: Model}
 
-A tally for a given model. We count "successes" in trials, thus sample_size
+A tally for a given model. We count "successes" in trials, thus size
 must be greater or equal to count.
 
 # Fields
 
     * `count::Int`: The number of positive outcomes in the sample.
-    * `sample_size::Int`: The total number of outcomes in the sample.
+    * `size::Int`: The total number of outcomes in the sample.
 
 See also [`Model`](@ref).
 """
 struct Tally{T<:Model}
     count::Int
-    sample_size::Int
-    function Tally{T}(count::Int, sample_size::Int) where {T}
+    size::Int
+    function Tally{T}(count::Int, size::Int) where {T}
         @assert(count >= 0, "count cannot be smaller than 0")
-        @assert(sample_size >= count, "sample_size cannot be smaller than count")
-        new{T}(count, sample_size)
+        @assert(size >= count, "size cannot be smaller than count")
+        new{T}(count, size)
     end
 end
 
@@ -174,9 +149,9 @@ All tallies for a post.
 # Fields
 
     * `tag_id::Int64`: The tag id.
-    * `parent_id::Union{Int64, Nothing}`: The unique identifier of the parent
+    * `parent_id::Union{Int64, Nothing}`: The id of the parent
     of this post if any.
-    * `post_id::Int64`: The unique identifier of this post.
+    * `post_id::Int64`: The id of this post.
     * `parent::BernoulliTally`: The current tally tally for the **parent of
     this post**
     * `uninformed::BernoulliTally`: The tally for the **parent of this post**
@@ -187,6 +162,7 @@ All tallies for a post.
 """
 Base.@kwdef struct DetailedTally
     tag_id::Int64
+    ancestor_id::Union{Int64,Nothing}
     parent_id::Union{Int64,Nothing}
     post_id::Int64
     parent::BernoulliTally
@@ -197,55 +173,59 @@ end
 
 
 """
-    NoteEffect
+    Effect
 
 The effect of a note on a post, given by the upvote probabilities given the
 note was shown and not shown respectively.
 
 # Fields
 
-    * `post_id::Int64`: The unique identifier of the post.
-    * `note_id::Union{Int64, Nothing}`: The unique identifier of the note. If
+    * `post_id::Int64`: The id of the post.
+    * `note_id::Union{Int64, Nothing}`: The id of the note. If
     `nothing`, then this is the root post.
     * `uninformed_probability::Float64`: The probability of an upvote given the
     note was not shown.
     * `informed_probability::Float64`: The probability of an upvote given the
     note was shown.
 """
-Base.@kwdef struct NoteEffect
+Base.@kwdef struct Effect
+    tag_id::Int64
     post_id::Int64
     note_id::Union{Int64,Nothing}
-    informed_probability::Float64
-    uninformed_probability::Float64
-    informed_sample_size::Int64
-    uninformed_sample_size::Int64
-    # sample_size::Int64
-    # informed_tally::Tally
-    # uninformed_tally::Tally
+    p::Float64
+    q::Float64
+    r::Float64
+    p_count::Int64
+    q_count::Int64
+    r_count::Int64
+    p_size::Int64
+    q_size::Int64
+    r_size::Int64
 end
 
 
 # TODO: improve documentation
 """
-    ScoreData
+    Score
 
 The data used to calculate the score of a post.
 """
-Base.@kwdef struct ScoreData
+Base.@kwdef struct Score
     tag_id::Int64
-    parent_id::Union{Int64,Nothing}
     post_id::Int64
-    effect::Union{NoteEffect,Nothing}
-    overall_probability::Float64
-    overall_tally::BernoulliTally
-    top_note_effect::Union{NoteEffect,Nothing}
+    top_note_id::Union{Int64,Nothing}
+    o::Float64
+    o_count::Int64
+    o_size::Int64
+    p::Float64
+    score::Float64
 end
 
 Base.@kwdef struct TalliesTree
     children::Function
     tally::Function
     needs_recalculation::Function
-    score_data::Function
+    effect::Function
 end
 
 
@@ -256,10 +236,10 @@ end
 
 function TalliesTree(t::InMemoryTree)
     return TalliesTree(
-        () -> map((c) -> TalliesTree(c), t.children),
+        (ancestor_id) -> map((c) -> TalliesTree(c), t.children),
         () -> t.tally,
         () -> true,
-        () -> nothing,
+        (ancestor_id) -> nothing,
     )
 end
 

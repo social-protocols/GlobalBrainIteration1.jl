@@ -35,8 +35,8 @@ export GammaDistribution
 export alpha
 export beta
 
-export NoteEffect
-export ScoreData
+export Effect
+export Score
 
 export TalliesTree
 export InMemoryTree
@@ -75,20 +75,5 @@ export score_tree
 # -----------------------------
 
 export score
-export informed_probability
-export uninformed_probability
-export parent_informed_probability
-export parent_uninformed_probability
-
-
-export parent_p_sample_size
-export parent_q_sample_size
-export p_sample_size
-export q_sample_size
-
-export informed_tally
-export uninformed_tally
-
-export top_note_id
 
 end

@@ -1,6 +1,6 @@
-function random_bernoulli_tally(sample_size::Int)::BernoulliTally
-  count = Random.rand(0:sample_size)
-  return BernoulliTally(count, sample_size)
+function random_bernoulli_tally(size::Int)::BernoulliTally
+  count = Random.rand(0:size)
+  return BernoulliTally(count, size)
 end
 
 function create_random_discussion(
@@ -14,14 +14,14 @@ function create_random_discussion(
   )
   # total count -> random Poisson
   # success count -> random Bernoulli
-  sample_size = rand(1:max_votes_per_unit)
+  size = rand(1:max_votes_per_unit)
   informed_tallies = [
     DetailedTally(
       post_id = p.parent,
       note_id = p.id,
-      for_note = random_bernoulli_tally(sample_size),
-      for_post_given_not_shown_note = random_bernoulli_tally(sample_size),
-      for_post_given_shown_note = random_bernoulli_tally(sample_size)
+      for_note = random_bernoulli_tally(size),
+      for_post_given_not_shown_note = random_bernoulli_tally(size),
+      for_post_given_shown_note = random_bernoulli_tally(size)
     )
     for p in posts
     if !isnothing(p.parent)

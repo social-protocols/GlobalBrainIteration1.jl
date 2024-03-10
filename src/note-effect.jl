@@ -1,17 +1,17 @@
 """
-    magnitude(effect::Union{NoteEffect, Nothing})::Float64
+    magnitude(effect::Union{Effect, Nothing})::Float64
 
-Calculate the magnitude of a `NoteEffect`: the absolute difference between the
+Calculate the magnitude of a `Effect`: the absolute difference between the
 upvote probabilities given the note was shown and not shown respectively. The
 effect of `Nothing` is 0.0 by definition.
 
 # Parameters
 
-    * `effect::Union{NoteEffect, Nothing}`: The effect to calculate the
+    * `effect::Union{Effect, Nothing}`: The effect to calculate the
     magnitude of.
 """
-function magnitude(effect::Union{NoteEffect,Nothing})::Float64
-    return abs(effect.uninformed_probability - effect.informed_probability)
+function magnitude(effect::Union{Effect,Nothing})::Float64
+    return abs(effect.q - effect.p)
 end
 
 
@@ -31,16 +31,16 @@ was shown and not shown respectively.
     * `uninformed_probability::Float64`: The probability of an upvote given the
     note was not shown.
 """
-function calc_note_support(e::NoteEffect)::Float64
-    if e.informed_probability == e.uninformed_probability == 0.0
+function calc_note_support(e::Effect)::Float64
+    if e.p == e.q == 0.0
         return 0.0
     end
-    return e.informed_probability / (e.informed_probability + e.uninformed_probability)
+    return e.p / (e.p + e.q)
 end
 
 
 """
-    calc_note_effect(tally::DetailedTally)::NoteEffect
+    calc_note_effect(tally::DetailedTally)::Effect
 
 Calculate the effect of a note on a post from the informed tally for the note
 and the post.
@@ -49,7 +49,7 @@ and the post.
 
     * `tally::DetailedTally`: The informed tallies for the note and the post.
 """
-function calc_note_effect(tally::DetailedTally)::NoteEffect
+function calc_note_effect(tally::DetailedTally)::Effect
     return calc_note_effect_bayesian_average(tally)
     # return calc_note_effect_hmc(hierarchical_model1)(tally)
     # return calc_note_effect_hmc(hierarchical_model2)(tally)
@@ -65,32 +65,33 @@ const GLOBAL_PRIOR_UPVOTE_PROBABILITY =
     BetaDistribution(0.875, GLOBAL_PRIOR_UPVOTE_PROBABILITY_SAMPLE_SIZE)
 
 function calc_note_effect_bayesian_average(tally::DetailedTally)
-    overall_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent))
+    upvote_probability = GLOBAL_PRIOR_UPVOTE_PROBABILITY |> (x -> update(x, tally.parent))
 
     uninformed_probability =
-        overall_probability |>
+        upvote_probability |>
         (x -> reset_weight(x, GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.uninformed)) |>
         (x -> x.mean)
 
     informed_probability =
-        overall_probability |>
+        upvote_probability |>
         (x -> reset_weight(x, GLOBAL_PRIOR_INFORMED_UPVOTE_PROBABILITY_SAMPLE_SIZE)) |>
         (x -> update(x, tally.informed)) |>
         (x -> x.mean)
 
-    # println("Calculated note effect given tally $tally: $overall_probability, $uninformed_probability, $informed_probability")
-
-    return NoteEffect(
+    return Effect(
+        tag_id = tally.tag_id,
         post_id = tally.parent_id,
         note_id = tally.post_id,
-        informed_probability = informed_probability,
-        uninformed_probability = uninformed_probability,
-        informed_sample_size = tally.informed.sample_size,
-        uninformed_sample_size = tally.uninformed.sample_size,
-        # sample_size = tally.overall.sample_size
-        # informed_tally = tally.informed,
-        # uninformed_tally = tally.uninformed,
+        p = informed_probability,
+        q = uninformed_probability,
+        r = uninformed_probability,
+        p_count = tally.informed.count,
+        q_count = tally.uninformed.count,
+        r_count = tally.parent.count,
+        p_size = tally.informed.size,
+        q_size = tally.uninformed.size,
+        r_size = tally.uninformed.size,
     )
 end
 
@@ -112,7 +113,7 @@ end
 #         uninformed_p = mean(chain[:q])
 #         informed_p = mean(chain[:p])
 
-#         return NoteEffect(
+#         return Effect(
 #             post_id = tally.parent_id,
 #             note_id = tally.post_id,
 #             uninformed_probability = uninformed_p,
