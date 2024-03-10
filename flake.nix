@@ -26,6 +26,7 @@
               sqlite-interactive
               fzf 
               vim
+              neovim
             ];
           };
         };
