@@ -193,14 +193,11 @@ Base.@kwdef struct Effect
     post_id::Int64
     note_id::Union{Int64,Nothing}
     p::Float64
-    q::Float64
-    r::Float64
     p_count::Int64
-    q_count::Int64
-    r_count::Int64
     p_size::Int64
+    q::Float64
+    q_count::Int64
     q_size::Int64
-    r_size::Int64
 end
 
 
