@@ -33,7 +33,6 @@ const t = BernoulliTally
 
     # # informed_tallies_generator = Base.Generator(identity, informed_tallies_vec)
     scores = score_tree(test_trees) do o
-        println("Got output: ", o)
     end
 
 end

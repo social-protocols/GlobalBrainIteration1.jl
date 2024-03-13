@@ -8,11 +8,9 @@
 Score a tree of tallies.
 
 # Parameters
-
-    * `tallies::Base.Generator`: A `Base.Generator` of `SQLTalliesTree`s.
-    * `output_result::Function`: A function to output the score or effect. If
-      `nothing`, no output is produced. This function can be used for side effects, such as
+    * `output_result::Function`: A function to output the score or effect. This function can be used for side effects, such as
       writing to a database.
+    * `tallies::Base.Generator`: A `Base.Generator` of `SQLTalliesTree`s.
 """
 
 function score_tree(
@@ -56,7 +54,6 @@ function score_post(
 
     top_note_effect = find_top_note_effect_relative(post_id, o, post, effects)
 
-
     my_effects::Vector{Effect} = get(effects, post_id, [])
     for e in my_effects
         output_results(e)
@@ -81,10 +78,7 @@ function score_post(
 
     output_results(score)
 
-
-
 end
-
 
 
 function find_top_note_effect_relative(
@@ -101,17 +95,17 @@ function find_top_note_effect_relative(
     children = note.children(post_id)
 
     n = length(children)
-    @info "Got children $n children for $note_id"
+    # @info "Got children $n children for $note_id"
 
     if length(children) == 0
         return nothing
     end
 
-    @info "Getting child effects"
+    # @info "Getting child effects"
 
     child_effects = [calc_note_effect_relative(post_id, r, child, effects) for child in children]
 
-    @info "Got child effects $child_effects"
+    # @info "Got child effects $child_effects"
 
     for effect in child_effects
         add!(effects, effect) 
@@ -125,19 +119,7 @@ function find_top_note_effect_relative(
         end,
         child_effects
     )
-
-    # return top_child_effect
 end
-
-
-
-# function find_top_note_effect(
-#     post::TalliesTree,
-#     effects::Dict{Int, Vector{Effect}},
-# )::Union{Effect,Nothing}
-
-
-# end
 
 function calc_note_effect_relative(post_id, prior::BetaDistribution, note::TalliesTree, effects)
 
@@ -145,8 +127,6 @@ function calc_note_effect_relative(post_id, prior::BetaDistribution, note::Talli
         # @info "Calculated relative note effect $post_id, $prior, $(note.tally().post_id): $effect"
     tally = note.tally()
     note_id = tally.post_id
-
-
 
     uninformed_probability =
         prior |>
@@ -175,8 +155,6 @@ function calc_note_effect_relative(post_id, prior::BetaDistribution, note::Talli
     #     top_subnote_effect.p
     # end
 
-    # find the child of this note that has the top effect on the root
-
 
     top_child_effect = find_top_note_effect_relative(post_id, informed_probability, note, effects)
 
@@ -204,14 +182,6 @@ function calc_note_effect_relative(post_id, prior::BetaDistribution, note::Talli
         q_size = tally.uninformed.size,
     )
 end
-
-
-
-# score_post(tallies[1]) do      
-# end
-
-
-
 
 
 function add!(effects::Dict{Int, Vector{Effect}}, effect::Effect)
