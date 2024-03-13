@@ -36,30 +36,28 @@ function score_post(
     this_tally = post.tally()
 
     if !post.needs_recalculation()
-        @info "No recalculation needed for $(this_tally.post_id). Using existing effect data"
+        # @info "No recalculation needed for $(this_tally.post_id). Using existing effect data"
         return
     else
-        @info "Calculating score for $(this_tally.post_id)"
+        # @info "Calculating score for $(this_tally.post_id)"
     end
 
     post_id = this_tally.post_id
 
-    @info "Scoring post $post_id"
+    # @info "Scoring post $post_id"
     
     o =
         GLOBAL_PRIOR_UPVOTE_PROBABILITY |>
         (x -> update(x, this_tally.overall))
 
-    @info "Overall probability in score_post for $post_id is $(o.mean)"
+    # @info "Overall probability in score_post for $post_id is $(o.mean)"
 
-    @info "Calling find_top_note_effect_relative $post_id=>$(post.tally().post_id)"
+    # @info "Calling find_top_note_effect_relative $post_id=>$(post.tally().post_id)"
 
     top_note_effect = find_top_note_effect_relative(post_id, o, post, effects)
 
 
-
     my_effects::Vector{Effect} = get(effects, post_id, [])
-    println("Effects for post $post_id", my_effects)
     for e in my_effects
         output_results(e)
     end
